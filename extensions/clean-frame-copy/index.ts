@@ -2,7 +2,7 @@ import { VERSION, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Box, Container, TuiAltScreen, sliceByColumn, stripTerminalSequences, visibleWidth } from "@earendil-works/pi-tui";
 
 // Keep this exact-version allowlist: internal selection/layout APIs need regression testing.
-const VERIFIED_PI_VERSIONS = new Set(["1.0.4", "1.1.0"]);
+const VERIFIED_PI_VERSIONS = new Set(["1.0.4", "1.1.0", "1.2.0"]);
 const ALPS_RENDER = Symbol.for("alps.pi.wrappedRender.v2");
 const ALPS_CACHE = Symbol.for("alps.pi.renderCache.v9");
 const OWNER = Symbol.for("pi.clean-frame-copy.owner.v1");

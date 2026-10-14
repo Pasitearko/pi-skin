@@ -36,7 +36,7 @@
 
 ## 快速安装：基础包
 
-前提：Node.js 22.19.0+（建议 24 LTS），已安装 Pi。建议使用 **Pi 1.1.0**；私有布局适配也保留对 1.0.4 的已验证支持。高级鼠标功能需要 Pi fullscreen 和支持 SGR mouse 的终端。
+前提：Node.js 22.19.0+（建议 24 LTS），已安装 Pi。建议使用 **Pi 1.2.0**；私有布局适配也保留对 1.1.0 / 1.0.4 的已验证支持。高级鼠标功能需要 Pi fullscreen 和支持 SGR mouse 的终端。
 
 ```sh
 pi install npm:@jiuliyear/pi-personalization
@@ -136,7 +136,7 @@ node tools/setup.mjs --undo /path/to/patch-undo.json --apply
 | 项目 | 范围 |
 |---|---|
 | Windows / macOS / Linux | Node 扩展与配置工具使用跨平台路径；系统功能按平台降级 |
-| Pi | 推荐 1.1.0；整框/选区适配仅在验证列表 1.0.4 / 1.1.0 启用，其他版本保留原生行为 |
+| Pi | 推荐 1.2.0；整框/选区适配仅在验证列表 1.0.4 / 1.1.0 / 1.2.0 启用，其他版本保留原生行为 |
 | 终端 | fullscreen、Unicode 与鼠标支持决定效果；ANSI/OSC8/字体由终端负责 |
 | ALPS | 高级补丁固定 0.3.4；无 ALPS 时相关框线增强不生效 |
 | 提示音 | Windows MCI；macOS/Linux 静默降级，计时状态正常 |

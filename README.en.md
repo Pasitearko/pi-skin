@@ -31,7 +31,7 @@ pi install npm:@jiuliyear/pi-personalization
 
 Alternatively, install from GitHub: `pi install git:github.com/Pasitearko/pi-personalization`. **Choose one source; do not load both copies.** The npm package includes the `pi-package` discovery keyword and a preview image. [Pi catalog](https://pi.dev/packages) indexing may lag behind npm publication.
 
-Restart Pi or use /reload. Node 22.19.0+ (24 LTS recommended); Pi 1.1.0 recommended. The private frame/selection adapters also recognize tested 1.0.4. Unsupported layouts fail closed to native behavior. Fullscreen and terminal mouse/Unicode support are required for advanced interactions.
+Restart Pi or use /reload. Node 22.19.0+ (24 LTS recommended); Pi 1.2.0 recommended. The private frame/selection adapters also recognize tested 1.1.0 and 1.0.4. Unsupported layouts fail closed to native behavior. Fullscreen and terminal mouse/Unicode support are required for advanced interactions.
 
 Base installation never overwrites installed plugins, settings, accounts or fonts. Optional advanced ALPS changes are explicit, exact-version/per-file-SHA-256 guarded, and reversible. Install alps-pi@0.3.4 and @specode/pi-subscription-usage@1.3.1 with Pi, clone this repo, run `node tools/setup.mjs` to preflight, then `node tools/setup.mjs --apply` only after reviewing the output and exiting Pi. The settings helper is separately opt-in: `--settings --apply` fills absent appearance leaves; `--replace-settings` explicitly adopts only the example's appearance leaves.
 
