@@ -8,6 +8,7 @@
         "repo,read:org"
       ],
       "lifecycle": "lazy",
+      "approveTools": true,
       "openUi": false
     }
   }

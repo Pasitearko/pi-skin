@@ -75,7 +75,7 @@ pi install ./linux
 ### 可选：Kitty 输入与 MCP
 
 - 字体片段：`config/kitty-fonts.example.conf`。输入片段：`config/kitty-input.example.conf`，在已有 Kitty include 之后手动合并。后者添加 **Ctrl+左键打开链接**（包括 Pi 捕获鼠标时），保留普通左键供 Pi/选区使用，并把 Ctrl+V 传给 Pi 处理图片粘贴；终端粘贴用 Ctrl+Shift+V。Kitty 默认 Ctrl+Shift+左键仍可用。
-- `config/mcp-github.example.json`：使用 pi-mcp-adapter 时，可将其中的 github 项手动合并进 `~/.config/mcp/mcp.json`。示例用 PATH 中的 `github-mcp-server`，需自行安装/登录；`openUi: false` 取消 MCP App 表单，直接调用工具，**不扩大权限或自动授权操作**。
+- `config/mcp-github.example.json`：使用 pi-mcp-adapter 时，可将其中的 github 项手动合并进 `~/.config/mcp/mcp.json`。示例用 PATH 中的 `github-mcp-server`，需自行安装/登录；`openUi: false` 取消 MCP App 表单，直接调用工具；示例额外设 `approveTools: true`，通过 Pi 的工具确认来批准调用。**UI 展示、工具确认和 OAuth 权限是三件独立的事**；`repo` scope 包含私人仓库及写权限，不需要写入时可给参数添加 `--read-only`。这份公开模板不修改本机已有的确认策略。
 - `config/mcp-playwright.example.json`：按需合并进 `~/.pi/agent/mcp.json`，使用独立 Chrome 会话，不附带个人浏览器资料。
 - 两份 MCP 文件只是模板，不要用它们覆盖整份已有配置；不需要对应插件时不要加入。修改后 `/reload`。插件 OAuth 认证按上游流程自行完成。
 - 如需保留 MCP UI，同时使用沉浸式翻译，可阅读 [可选 UI 噪声修复](compat/mcp-ui-filter/README.md)。该补丁独立安装，不是默认外观补丁的一部分。
@@ -143,7 +143,7 @@ npm run check:privacy
 
 测试仅给本目录 `node_modules` 的开发依赖应用 Linux 补丁，不碰实际 `~/.pi/agent`。覆盖 7 个扩展加载、配置字段白名单、补丁哈希与拒绝未知文件、天气、最终状态音频调度、真实 Pi/ALPS 多行输入复制，以及 CUSTOM 背景与工具框颜色。测试使用假网络/播放器/clipboard，不调用模型、不查询私人额度、不播放声音。
 
-本次 Linux 本地通过：包/配置 6 项、天气 57 项、计时/音频 36 项、干净复制 24 个集成用例、CUSTOM/工具框 960 个渲染组合；另单独验证 MCP UI 噪声过滤 11 项，并在临时目录验证该补丁的 dry-run、应用、重复应用、冲突拒绝与逐字节撤回。可选 MCP UI 测试和隔离安装方法见其 README，不由默认 `npm test` 自动运行。自动化不等于跨终端实机验收；其他 Pi 版本不作保证。
+本次 Linux 本地通过：包/配置 7 项、天气 57 项、计时/音频 36 项、干净复制 24 个集成用例、CUSTOM/工具框 960 个渲染组合；另单独验证 MCP UI 噪声过滤 11 项。默认测试已在临时目录自动覆盖该补丁的 dry-run、应用、重复应用、冲突拒绝与逐字节撤回；另从 registry 干净安装 5.3.2，验证补丁、11 项回归及撤回。可选 MCP UI 测试和隔离安装方法见其 README，不由默认 `npm test` 自动运行。自动化不等于跨终端实机验收；其他 Pi 版本不作保证。
 
 卸载：`pi remove /absolute/path/to/pi-skin/linux`（以 `pi list` 显示的 source 为准），重启 Pi；如有高级补丁，先用 receipt 撤回。手工合并的设置由你保留或恢复。
 

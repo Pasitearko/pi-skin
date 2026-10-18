@@ -14,12 +14,12 @@
 | 上游插件版本 | `config/packages.example.json` | 安装清单；不捆绑 node_modules，不自动安装/登录 |
 | Maple Mono 字体选择 | `config/kitty-fonts.example.conf` | 可手动合并的片段；不分发字体二进制 |
 | Ctrl+左键打开链接、Ctrl+V 图片粘贴透传 | `config/kitty-input.example.conf` | 可手动合并的片段；不复制整份终端/桌面配置 |
-| GitHub 直接工具调用 | `config/mcp-github.example.json` | PATH 命令示例、`openUi: false`；无凭据，需自行安装和登录 |
+| GitHub 直接工具调用 | `config/mcp-github.example.json` | PATH 命令示例、`openUi: false`、安全默认 `approveTools: true`；无凭据，需自行安装和登录 |
 | 隔离 Playwright + Chrome | `config/mcp-playwright.example.json` | 固定版本、隔离浏览器、有 sandbox 的可选模板 |
 | ALPS / quota 的 13 个源码补丁 | `patches/` | 与本机版本一致，固定版本、哈希检查、显式应用和可撤回 |
 | MCP UI 翻译扩展噪声修复 | `compat/mcp-ui-filter/` | 独立可选，pi-mcp-adapter 5.3.2、双层过滤、上游 MIT 许可、11 项回归 |
 
-Linux 发布副本与本机有意保留的差异：working-timer 增加可选 `PI_COMPLETION_SOUND`，测试依赖改用克隆目录的隔离 node_modules，并修正旧平台断言；额外 README 记录安装边界。这些不会改变本机正在运行的扩展。
+Linux 发布副本与本机有意保留的差异：working-timer 增加可选 `PI_COMPLETION_SOUND`，测试依赖改用克隆目录的隔离 node_modules，并修正旧平台断言；公开 GitHub MCP 模板额外启用 `approveTools: true`，与 UI 展示开关、账号权限分开说明；额外 README 记录安装边界。这些不会改变本机正在运行的扩展或确认策略。
 
 ## 不收录
 

@@ -9,7 +9,7 @@
 - `host-html-template.ts`：在转换自定义事件前过滤这个命名空间。
 - `ui-server.ts`：在记录消息、触发回调前再次过滤原始/已标准化的同类消息，兼容旧的已打开页面。
 - 保留原有 source/origin/token 检查及正常表单、prompt、intent 和通知行为。它只是定向兼容修复，并不为其他自定义 intent 提供身份认证。
-- `openUi: false` 是另一个独立选项，表示不声明 MCP App UI 支持、直接调用工具；它不改变账号权限，也不自动授权任何 GitHub 操作。参见 [GitHub 配置示例](../../config/mcp-github.example.json)。
+- `openUi: false` 是另一个独立选项，表示不声明 MCP App UI 支持、直接调用工具；**它不是审批开关**。参见 [GitHub 配置示例](../../config/mcp-github.example.json)：公开模板额外设 `approveTools: true`，要求 Pi 工具确认；`repo` OAuth scope 包含私人仓库与写权限，不需写入时添加 `--read-only`。未设工具确认时，禁用 UI 不会阻止已获账号权限的写操作。
 
 ## 检查 / 应用 / 撤回
 
