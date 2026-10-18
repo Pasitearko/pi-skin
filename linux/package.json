@@ -1,0 +1,39 @@
+{
+  "name": "@jiuliyear/pi-personalization-linux",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Linux / CachyOS + Kitty Pi 1.3.0 personalization snapshot, separate from the Windows package",
+  "license": "MIT",
+  "engines": { "node": ">=22.19.0" },
+  "pi": {
+    "extensions": [
+      "extensions/clean-frame-copy/index.ts",
+      "extensions/frame-click-toggle/index.ts",
+      "extensions/message-timestamps/index.ts",
+      "extensions/tick-rail/index.ts",
+      "extensions/tool-status-style/index.ts",
+      "extensions/weather-row/index.ts",
+      "extensions/working-timer/index.ts"
+    ]
+  },
+  "scripts": {
+    "test": "node tools/test.mjs",
+    "doctor": "node tools/patches.mjs",
+    "check:privacy": "node ../tools/privacy-check.mjs"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": { "optional": true },
+    "@earendil-works/pi-tui": { "optional": true }
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.3.0",
+    "@specode/pi-subscription-usage": "1.3.1",
+    "alps-pi": "0.3.4",
+    "jiti": "2.6.1"
+  }
+}

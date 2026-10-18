@@ -3,6 +3,13 @@
 
 An installable Pi package distilled from a locally customized setup: weather, quota row, per-round timer, OpenAI Fast switch, message timestamps, prompt timeline, whole-frame collapse/expand, clean selection/copy, and a minimal theme.
 
+## Platform profiles
+
+- **Windows / original package:** the existing root `extensions/`, `patches/`, Windows Terminal example and Pi 1.2.0 installation below remain unchanged.
+- **Linux / CachyOS + Kitty:** see **[linux/README.md](linux/README.md)** for the separate Pi **1.3.0** local package, seven current components, sanitized settings/keybindings, Nerd Font icons, fixed green/red tool frames, PipeWire audio support (bring your own audio), and version/hash-guarded Linux patches.
+
+The root npm/git package does not automatically load `linux/`. Clone the repository and follow the Linux instructions; do not load duplicate components from both profiles. No new npm release is made by this addition.
+
 ## Previews
 
 ### Actual terminal screenshot

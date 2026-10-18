@@ -19,3 +19,16 @@ fonts/build-report.json
 *.key
 *.p12
 *.pfx
+
+# Never publish Pi credentials, machine/session state, or local undo receipts.
+auth.json
+models.json
+models-store.json
+mcp.json
+mcp-cache.json
+mcp-onboarding.json
+mcp-npx-cache.json
+mcp-project-approvals.json
+web-search.json
+sessions/
+personalization-undo/

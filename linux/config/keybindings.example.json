@@ -1,0 +1,4 @@
+{
+  "tui.altScreen.search": "ctrl+f",
+  "tui.editor.cursorRight": ["right"]
+}
