@@ -10,9 +10,12 @@ const alias=Object.fromEntries(['pi-coding-agent','pi-tui','pi-ai','pi-agent-cor
 const jiti=createJiti(import.meta.url,{alias,fsCache:false});
 const root=join(dirname(dirname(fileURLToPath(import.meta.url))), 'extensions');
 const sdk=await jiti.import(alias['@earendil-works/pi-coding-agent']);sdk.initTheme('dark');
+const {createChatViewport}=await jiti.import(join(modules,'@earendil-works/pi-coding-agent/dist/modes/interactive/chat-viewport.js'));
 const tui=await jiti.import(alias['@earendil-works/pi-tui']);
 const alps=await jiti.import(join(root,'../node_modules/alps-pi/src/features/chrome-frame/patch.ts'));
 const copy=await jiti.import(join(root,'clean-frame-copy/index.ts'));
+const {createBottomInputEditor}=await jiti.import(join(root,'../node_modules/alps-pi/src/features/bottom-input/editor.ts'));
+const editorFrame=Symbol.for('alps.pi.editorSelectionFrame.v1');
 const clicks=await jiti.import(join(root,'frame-click-toggle/index.ts'));
 const timestamps=await jiti.import(join(root,'message-timestamps/index.ts'));
 const chrome=await jiti.import(join(root,'../node_modules/alps-pi/src/features/chrome-frame/chrome.ts'));
@@ -67,6 +70,18 @@ function select(s,startRow,endRow,startCol=0,endCol=69,reverse=false) {
 }
 function bodyRow(s,text){const i=source(s).findIndex(line=>plain(line).includes(text));assert.ok(i>=0,text);return i;}
 function edges(s){const lines=source(s).map(plain);return [lines.findIndex(line=>line.startsWith('╭─ ')),lines.findLastIndex(line=>line.startsWith('╰'))];}
+function editorFixture(text,columns=50,options={}) {
+  const state={beautifiedInputEnabled:true,getTheme:()=>({fg:(_t,s)=>s,bg:(_t,s)=>s,bold:s=>s}),getFrameStatus:()=>({model:'MODEL',context:'CONTEXT'})};
+  const editor=createBottomInputEditor({terminal:{columns,rows:30},requestRender(){}},{borderColor:s=>s,selectList:{}},{matches:()=>false},state,options);
+  editor.focused=false;editor.setText(text);
+  const chat=new tui.ScrollView(new tui.Text('CHAT fixed outside editor',0,0),{primary:true,scrollbar:'hidden'});
+  const s=screen([],columns,30,{layoutRoot:new tui.VStack([chat,editor,new tui.Text('FOOTER outside editor',0,0)])});
+  const rows=()=>{const a=s.previousScreen.findIndex(line=>plain(line).startsWith('╭'));const b=s.previousScreen.findIndex((line,i)=>i>a&&plain(line).startsWith('╰'));return [a,b];};
+  return {s,editor,state,rows};
+}
+function selectEditor(s,a,b,left=0,right=s.terminal.columns-1,reverse=false) {
+  const start={row:a,col:left},end={row:b,col:right};s.selectionAnchor=reverse?end:start;s.selectionFocus=reverse?start:end;return s.getActiveSelectionText();
+}
 alps.enablePatch();const state=alps.getGlobalPatchState();state.config.settings.chromeFrame.assistantFrame=true;
 state.config.settings.chromeFrame.toolCompactMode='compact';state.config.settings.chromeFrame.compactEditTool=false;
 const live=lifecycle(copy);
@@ -244,6 +259,70 @@ try {
     const s=screen([new tui.Text('╭─ TOOL '+'─'.repeat(61)+'╮\n│ literal │\n╰'+'─'.repeat(68)+'╯',0,0)]);
     const lines=[...s.currentLayout.lines];assert.deepEqual(s.applySelection(lines,s.currentLayout),lines);select(s,0,2);
     assert.deepEqual(s.applySelection(lines,s.currentLayout),originalHighlight.call(s,lines,s.currentLayout));assert.equal(highlightedCells(s.applySelection(lines,s.currentLayout)[0])[0],true);
+  });
+  await test('fixed real main editor: multiline selection copies only body and never highlights rails/status',()=>{
+    const {s,rows}=editorFixture('first line\n    indented\n\n│ literal ─ ╭ tree\n中文 😀 é');const [top,bottom]=rows();assert.ok(top>0);
+    assert.equal(selectEditor(s,top,bottom),'first line\n    indented\n\n│ literal ─ ╭ tree\n中文 😀 é');s.doRender();
+    for(let y=top;y<=bottom;y++){const cells=highlightedCells(s.previousScreen[y]);assert.equal(cells[0],false);assert.equal(cells[1],false);assert.equal(cells[48],false);assert.equal(cells[49],false);if(y===top||y===bottom)assert.equal(cells.some(Boolean),false);else assert.equal(cells[2],true);}
+    assert.equal(highlightedCells(s.previousScreen[top-1]).some(Boolean),false);assert.equal(highlightedCells(s.previousScreen[bottom+1]).some(Boolean),false);
+  });
+  await test('editor partial and reverse selections keep exact substrings with Unicode grapheme boundaries',()=>{
+    const {s,rows}=editorFixture('abcdef\n中文😀text');const [top]=rows();assert.equal(selectEditor(s,top+1,top+1,3,5),'bcd');
+    assert.equal(selectEditor(s,top+1,top+2,4,5),'cdef\n中文');assert.equal(selectEditor(s,top+1,top+2,4,5,true),'cdef\n中文');
+  });
+  await test('editor decoration-only selection stays active and never copies status/model/last answer',async()=>{
+    const {s,rows}=editorFixture('body');const [top,bottom]=rows();const copied=[];s.copySelection=async text=>{copied.push(text);return true;};
+    for(const [y,a,b] of [[top,0,49],[bottom,0,49],[top+1,0,1],[top+1,48,49]]){
+      assert.equal(selectEditor(s,y,y,a,b),'');assert.equal(s.hasActiveSelection(),true);s.doRender();const cells=highlightedCells(s.previousScreen[y]);for(let x=a;x<=b;x++)assert.equal(cells[x],false);assert.equal(await s.copyActiveSelectionToClipboard(),false);
+    }assert.deepEqual(copied,[]);
+  });
+  await test('editor actual multiline mouse drag auto-copies clean text without changing input or cursor',async()=>{
+    const {s,editor,rows}=editorFixture('first\nsecond');const [top]=rows();const before=editor.getText(),cursor=editor.getCursor();const copied=[];s.copyOnSelect=true;s.copySelection=async text=>{copied.push(text);return true;};
+    s.handleMouseEvent({button:0,x:2,y:top+1,release:false});s.handleMouseEvent({button:32,x:7,y:top+2,release:false});s.handleMouseEvent({button:0,x:7,y:top+2,release:true});
+    await new Promise(r=>setImmediate(r));s.stopSelectionAutoScroll();assert.deepEqual(copied,['first\nsecond']);assert.equal(editor.getText(),before);assert.deepEqual(editor.getCursor(),cursor);
+  });
+  await test('editor autocomplete remains outside frame masks and retains native selection',()=>{
+    class PopupEditor extends sdk.CustomEditor {render(w){return [...super.render(w),'POPUP │ suggestion'];}}
+    const {s,rows}=editorFixture('body',50,{CustomEditor:PopupEditor});const [top,bottom]=rows();assert.equal(plain(s.previousScreen[bottom+1]).trimEnd(),'POPUP │ suggestion');
+    assert.equal(selectEditor(s,top,bottom+1),'body\nPOPUP │ suggestion');s.doRender();assert.equal(highlightedCells(s.previousScreen[bottom+1])[0],true);
+  });
+  await test('fallback editor is supported; disabled and narrow editor rendering clears provenance',()=>{
+    const {s,editor,state,rows}=editorFixture('fallback\nbody',50,{CustomEditor:false});const [top,bottom]=rows();assert.equal(selectEditor(s,top,bottom),'fallback\nbody');assert.ok(editor[editorFrame]);
+    state.beautifiedInputEnabled=false;s.doRender();assert.equal(editor[editorFrame],undefined);selectEditor(s,0,29);assert.equal(s.getActiveSelectionText(),original.call(s));
+    state.beautifiedInputEnabled=true;editor.render(7);assert.equal(editor[editorFrame],undefined);
+  });
+  await test('editor stale metadata, unknown versions, changed renderer and overlays fall back conservatively',()=>{
+    for(const mode of ['stale','version','render','overlay']){const {s,editor,rows}=editorFixture('body');const [top,bottom]=rows();selectEditor(s,top,bottom);
+      if(mode==='stale')editor[editorFrame].lines[1]='not the rendered body';if(mode==='version')editor[editorFrame].version=2;if(mode==='render')editor.render=()=>[];if(mode==='overlay')s.hasOverlay=()=>true;
+      assert.equal(s.getActiveSelectionText(),original.call(s),mode);assert.deepEqual(s.applySelection(s.currentLayout.lines,s.currentLayout),originalHighlight.call(s,s.currentLayout.lines,s.currentLayout),mode);
+    }
+  });
+  await test('editor resize/new incoming layout uses fresh lines and copy never rerenders components',()=>{
+    const {s,editor,rows}=editorFixture('中文😀\nsecond');const [top,bottom]=rows();selectEditor(s,top,bottom);s.terminal.columns=35;s.doRender();
+    assert.equal(s.getActiveSelectionText(),'中文😀\nsecond');for(let y=rows()[0];y<=rows()[1];y++)assert.equal(highlightedCells(s.previousScreen[y])[34],false);
+    // Fresh content must be masked on its very first redraw, not just after a second render.
+    editor.setText('changed\nsecond');s.doRender();assert.equal(highlightedCells(s.previousScreen[rows()[0]+1])[0],false);assert.equal(s.getActiveSelectionText(),'changed\nsecond');
+    const render=editor.render;let calls=0;editor.render=function(w){calls++;return render.call(this,w);};s.doRender();calls=0;assert.equal(s.getActiveSelectionText(),'changed\nsecond');assert.equal(calls,0);
+  });
+  await test('production dock clips autocomplete/editor with natural container heights and cursor lineOffset',()=>{
+    for(const rows of [30,12])for(const focused of [false,true]){
+      class PopupEditor extends sdk.CustomEditor {render(w){return [...super.render(w),...Array.from({length:10},(_,i)=>`POPUP ${i} │ suggestion`)];}}
+      const {editor}=editorFixture(Array.from({length:15},(_,i)=>`body ${i} 中文😀`).join('\n'),50,{CustomEditor:PopupEditor});editor.focused=focused;
+      const container=new tui.Container();container.addChild(editor);
+      const blank=()=>new tui.Container();
+      const viewport=createChatViewport({document:new tui.Text('CHAT',0,0),pendingMessages:blank(),status:blank(),editor:container,footer:new tui.Text('FOOTER',0,0),widgetsAbove:new tui.Text(Array(16).fill('WIDGET').join('\n'),0,0),scrollbar:'hidden'});
+      const s=screen([],50,rows,{layoutRoot:viewport.root});
+      const find=b=>b.component===container?b:b.children.map(find).find(Boolean);const box=find(s.currentLayout.root);assert.ok(box);
+      assert.ok(box.lines.length>box.rect.height,'production editorContainer must actually be clipped');
+      if(rows===12&&focused)assert.ok(box.lineOffset>0,'cursor offset must actually shift visible content');
+      const frame=editor[editorFrame].lines,origin=box.rect.y-box.lineOffset;
+      const first=Math.max(box.rect.y,box.clip.y,origin),last=Math.min(box.rect.y+box.rect.height,box.clip.y+box.clip.height,origin+frame.length)-1;
+      assert.ok(last>=first,'some frame rows remain visible');
+      const expected=[];for(let y=first;y<=last;y++){const i=y-origin;if(i>0&&i<frame.length-1)expected.push(plain(tui.sliceByColumn(frame[i],2,46,true)).trimEnd());}
+      assert.equal(selectEditor(s,first,last),expected.join('\n'),`rows=${rows}, focused=${focused}`);s.doRender();
+      for(let y=first;y<=last;y++){const cells=highlightedCells(s.previousScreen[y]);for(const x of [0,1,48,49])assert.equal(cells[x],false);const i=y-origin;if(i===0||i===frame.length-1)assert.equal(cells.some(Boolean),false);}
+      const popup=s.previousScreen.findIndex(line=>plain(line).startsWith('POPUP'));if(popup>=0){selectEditor(s,popup,popup);assert.equal(s.getActiveSelectionText(),original.call(s));}
+    }
   });
   await test('temporary off/on and shutdown/reload restore the exact original extraction method',async()=>{
     const s=screen([tool('body')]);const [top,bottom]=edges(s);select(s,top,bottom);let redraws=0;s.requestRender=()=>redraws++;

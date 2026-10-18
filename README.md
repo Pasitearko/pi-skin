@@ -12,7 +12,7 @@
 
 | 方案 | 入口 | 说明 |
 |---|---|---|
-| Windows / 原基础包 | 本页下方、`extensions/`、`patches/`、`examples/windows-terminal.json` | 保留原有实现、安装方式和 Pi 1.2.0 验证范围 |
+| Windows / 原基础包 | 本页下方、`extensions/`、`patches/`、`examples/windows-terminal.json` | 保留原安装方式；新增输入框多行选区去框（下文说明），Linux 独立版本不变 |
 | **Linux · CachyOS + Kitty** | **[linux/README.md](linux/README.md)** | 独立保存本机 Pi **1.3.0** 的 7 个组件、彩色 Nerd 图标、绿/红工具框、Linux 提示音支持、配置与高级补丁 |
 
 **两套内容分开维护，不要同时加载同名组件。** 原 npm 包和仓库根目录安装仍对应原基础包；Linux 方案请克隆后按其独立说明安装，未发布新 npm 版本。
@@ -74,7 +74,7 @@ pi install -l npm:@jiuliyear/pi-personalization
 | 会话时间戳 | 在消息框标题保留消息产生的本地时间 | 自动；标题宽度不足时不挤坏正文 |
 | 提问时间轴 | 右侧圆点定位到用户提问，可选择密集标记中的条目 | `/timeline`、`/timeline list`、`on/off/status` |
 | 整框点击 | 已有可折叠框的标题、正文、空白和细线边框均可单击切换 | `/frame-clicks on/off/status`；需要支持的 ALPS 框 |
-| 干净选区 / 复制 | 外框仍显示，但 ALPS 装饰线、额外边距不参与选区高亮/复制 | `/clean-copy on/off/status`；需要支持的 ALPS 框 |
+| 干净选区 / 复制 | 消息框及主输入框装饰线、额外边距不参与选区高亮/复制；细线仍显示 | `/clean-copy on/off/status`；需要支持的 ALPS 框 |
 | 简洁主题 | 减少工具输出背景块 | `no-tool-bg` |
 | 高级 ALPS 定制 | Fast ⚡ / 文件夹路径布局、估算 cost、tok/s 持久化、状态缓存、隐藏上次 prompt echo、超链接适配 | 见下方；只对固定版本应用 |
 
@@ -102,9 +102,16 @@ $env:PI_WEATHER_LOCATIONS = '[{"id":"london","name":"London","latitude":51.5074,
 - 链接和独立交互按钮优先。HTTP(S) 链接遵循终端 / Pi 链接行为；高级补丁中的 Windows 本地文件采用 Ctrl+左键，普通点击不打开文件。
 - 只增强**本来就能折叠的框**，不会把所有 USER / ASSISTANT 正文变成新的折叠对象。
 - 正文缩进、代码、表格、目录树、字面框线与选中的标题/时间/耗时保留；不会全局删除 `│` 等字符。
+- 主输入框跨行／反向／局部拖选仅高亮和复制选中的正文，排除上下状态行、左右细线和装饰边距；缩进、空行、中文和 emoji 保留，补全列表保持原生行为。需要下面高级补丁中的 `bottom-input/editor.ts`，仅安装扩展不会改写 ALPS。
 - 只选到装饰线时返回空选区，避免误复制最后一条回答。
 - Ctrl/Alt/Shift 修饰点击不折叠；多击的首击仍可能切换，不承诺与双击单词选择同时成立。
 - 本扩展只控制 **Pi fullscreen 的内部选区**；Shift 绕过 Pi、终端自身选区、SSH / tmux 转发与终端快捷键由终端管理。
+
+### 本次更新：输入框多行选区去框
+
+GitHub 源码已加入上述修复，未发布新 npm 版本。原消息框逻辑保留；仅 `clean-frame-copy` 额外放行 Pi **1.3.0**，真实组件测试在 Pi **1.2.0 和 1.3.0 各 36/36** 通过。本次不扩大其他扩展的版本范围，也不修改 `linux/` 独立版本。真实终端最终效果仍需重启后确认。
+
+已有 Git 安装用户需更新扩展，并退出 Pi 后从最新仓库运行下方受保护的补丁工具，再重启 Pi。工具允许已有的已知补丁文件，但未知／个人改动会拒绝覆盖；不要手动绕过哈希保护。输入框补丁通过渲染元数据证明边框来源，不全局删除框线字符、不修改输入与光标、不接管终端自身的 Shift 选区。
 
 ## 高级外观：ALPS 配套与可撤销补丁
 
@@ -145,7 +152,7 @@ node tools/setup.mjs --undo /path/to/patch-undo.json --apply
 | 项目 | 范围 |
 |---|---|
 | Windows / macOS / Linux | Node 扩展与配置工具使用跨平台路径；系统功能按平台降级 |
-| Pi | 推荐 1.2.0；整框/选区适配仅在验证列表 1.0.4 / 1.1.0 / 1.2.0 启用，其他版本保留原生行为 |
+| Pi | 推荐 1.2.0；整框适配列表 1.0.4 / 1.1.0 / 1.2.0；去框选区另验证并支持 1.3.0；其他版本保留原生行为 |
 | 终端 | fullscreen、Unicode 与鼠标支持决定效果；ANSI/OSC8/字体由终端负责 |
 | ALPS | 高级补丁固定 0.3.4；无 ALPS 时相关框线增强不生效 |
 | 提示音 | Windows MCI；macOS/Linux 静默降级，计时状态正常 |

@@ -6,6 +6,12 @@
       "version": "0.3.4",
       "files": [
         {
+          "path": "src/features/bottom-input/editor.ts",
+          "before": "441cc755fbfe107087a8e58ad0fe2adf49dc52850f4e8a3a6121bd4a55dc1181",
+          "after": "816aad81077867151274ac2d5541afb0fea9adb3dbda6c7ba06ac84b84b2595c",
+          "payload": "patches/alps-pi/src/features/bottom-input/editor.ts"
+        },
+        {
           "path": "src/features/bottom-input/frame.ts",
           "before": "939d58e60181afb738f2a21d04b857bcdb37eee4be73d7cf52b7470f9563baec",
           "after": "af809a588d1f9158b1113be9143ed87f4261ef98256ddacd7d7f949483232016",

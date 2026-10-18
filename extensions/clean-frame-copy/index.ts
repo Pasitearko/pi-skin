@@ -2,9 +2,10 @@ import { VERSION, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Box, Container, TuiAltScreen, sliceByColumn, stripTerminalSequences, visibleWidth } from "@earendil-works/pi-tui";
 
 // Keep this exact-version allowlist: internal selection/layout APIs need regression testing.
-const VERIFIED_PI_VERSIONS = new Set(["1.0.4", "1.1.0", "1.2.0"]);
+const VERIFIED_PI_VERSIONS = new Set(["1.0.4", "1.1.0", "1.2.0", "1.3.0"]);
 const ALPS_RENDER = Symbol.for("alps.pi.wrappedRender.v2");
 const ALPS_CACHE = Symbol.for("alps.pi.renderCache.v9");
+const EDITOR_FRAME = Symbol.for("alps.pi.editorSelectionFrame.v1");
 const OWNER = Symbol.for("pi.clean-frame-copy.owner.v1");
 type Rect = { x: number; y: number; width: number; height: number };
 type Component = {
@@ -13,7 +14,7 @@ type Component = {
   paddingX?: number; paddingY?: number;
   [key: symbol]: unknown;
 };
-type LayoutBox = { component: Component; rect: Rect; clip: Rect; children: LayoutBox[]; scrollView?: { scrollTop: number }; scrollContentLines?: string[] };
+type LayoutBox = { component: Component; rect: Rect; clip: Rect; children: LayoutBox[]; lines?: string[]; lineOffset?: number; scrollView?: { scrollTop: number }; scrollContentLines?: string[] };
 type Layout = { root: LayoutBox };
 type Point = { row: number; col: number; boundary?: boolean; scrollView?: object };
 type Selection = { start: Point; end: Point };
@@ -79,11 +80,31 @@ function frameMasks(component: Component, x: number, y: number, width: number, h
   return result;
 }
 
+/** The main editor supplies exact frame-only lines, excluding autocomplete/popups. */
+function editorMasks(component: Component, x: number, y: number, width: number, height: number, source: string[], visibleStart: number, visibleEnd: number): RowMask[] | undefined {
+  const cache = component[EDITOR_FRAME] as { version?: number; width?: number; lines?: string[]; render?: unknown } | undefined;
+  if (cache?.version !== 1 || cache.render !== component.render || cache.width !== width || width < 8
+    || !cache.lines || cache.lines.length < 3 || cache.lines.length > height) return;
+  const lines = cache.lines.map(stripTerminalSequences);
+  if (!lines[0].startsWith("╭") || !lines[0].endsWith("╮") || !lines.at(-1)!.startsWith("╰") || !lines.at(-1)!.endsWith("╯")) return;
+  for (let i = 0; i < lines.length; i++) {
+    if (visibleWidth(lines[i]) !== width) return;
+    const row = y + i;
+    // Cropped docks paint only this trusted layout slice, including cursor lineOffset.
+    if (row >= visibleStart && row < visibleEnd && (source[row] === undefined
+      || stripTerminalSequences(sliceByColumn(source[row], x, width, true)) !== lines[i])) return;
+    if (i > 0 && i < lines.length - 1 && (!lines[i].startsWith("│ ") || !lines[i].endsWith(" │"))) return;
+  }
+  // Status/model/metrics rows are UI chrome, not editor text.
+  return lines.map((_line, i) => ({ frameStart: x, frameEnd: x + width,
+    keep: i === 0 || i === lines.length - 1 ? [] : [{ start: x + 2, end: x + width - 2 }] }));
+}
+
 /** Shared provenance/masks for BOTH copy and highlight; never render inside this pass. */
-function selectionPlan(screen: Screen, layout = screen.currentLayout): SelectionPlan | undefined {
+function selectionPlan(screen: Screen, layout = screen.currentLayout, visibleSource = screen.previousScreen): SelectionPlan | undefined {
   const selection = screen.getSelectionBounds();
   if (!selection || !layout || screen.hasOverlay?.()) return;
-  let source = screen.previousScreen;
+  let source = visibleSource;
   let root = layout.root;
   let offsetX = 0, offsetY = 0;
   let scrollBox: LayoutBox | undefined;
@@ -98,13 +119,16 @@ function selectionPlan(screen: Screen, layout = screen.currentLayout): Selection
   }
   const masks = new Map<number, RowMask[]>();
   const visited = new Set<Component>();
-  function visitComponent(component: Component, x: number, y: number, width: number, height: number) {
-    if (y > selection!.end.row || y + height <= selection!.start.row || visited.has(component)) return;
+  function visitComponent(component: Component, x: number, y: number, width: number, height: number, visibleStart = y, visibleEnd = y + height) {
+    visibleStart = Math.max(y, visibleStart); visibleEnd = Math.min(y + height, visibleEnd);
+    if (visibleStart >= visibleEnd || visibleStart > selection!.end.row || visibleEnd <= selection!.start.row || visited.has(component)) return;
     visited.add(component);
-    const frame = frameMasks(component, x, y, width, height, source);
+    const frame = editorMasks(component, x, y, width, height, source, visibleStart, visibleEnd)
+      ?? (visibleStart === y && visibleEnd === y + height ? frameMasks(component, x, y, width, height, source) : undefined);
     if (frame) {
       for (let i = 0; i < frame.length; i++) {
         const row = y + i;
+        if (row < visibleStart || row >= visibleEnd) continue;
         const list = masks.get(row) ?? [];
         // Ambiguous overlap is not safe to alter. Leave the entire row untouched.
         list.push(frame[i]); masks.set(row, list);
@@ -122,7 +146,7 @@ function selectionPlan(screen: Screen, layout = screen.currentLayout): Selection
     if (!mouse || mouse.width !== innerWidth || mouse.children.reduce((sum, child) => sum + child.height, 0) + 2 * padY !== height) return;
     let childY = y + padY;
     for (const child of mouse.children) {
-      visitComponent(child.component, x + padX, childY, innerWidth, child.height);
+      visitComponent(child.component, x + padX, childY, innerWidth, child.height, visibleStart, visibleEnd);
       childY += child.height;
     }
   }
@@ -131,7 +155,15 @@ function selectionPlan(screen: Screen, layout = screen.currentLayout): Selection
       for (const child of box.children) visitBox(child);
     } else {
       const component = box.component === screen.implicitDocument ? screen as unknown as Component : box.component;
-      visitComponent(component, box.rect.x + offsetX, box.rect.y + offsetY, box.rect.width, box.rect.height);
+      const x = box.rect.x + offsetX, y = box.rect.y + offsetY;
+      if (!scrollBox && box.lines) {
+        // Leaf lines and mouseLayout describe the same natural render. Native paint
+        // may allocate fewer rows and shift toward the cursor; never infer from text.
+        if (box.clip.x > box.rect.x || box.clip.x + box.clip.width < box.rect.x + box.rect.width) return;
+        const first = Math.max(box.rect.y, box.clip.y) + offsetY;
+        const last = Math.min(box.rect.y + box.rect.height, box.clip.y + box.clip.height) + offsetY;
+        visitComponent(component, x, y - (box.lineOffset ?? 0), box.rect.width, box.lines.length, first, last);
+      } else visitComponent(component, x, y, box.rect.width, box.rect.height);
     }
   }
   visitBox(root);
@@ -170,7 +202,7 @@ export function cleanSelectionText(screen: Screen, originalText: string): string
 
 /** Paint only the same content cells used by copy; use the INCOMING layout, not the previous frame. */
 export function cleanSelectionHighlight(screen: Screen, lines: string[], layout: Layout | undefined, native: string[]): string[] {
-  const plan = selectionPlan(screen, layout);
+  const plan = selectionPlan(screen, layout, lines);
   if (!plan) return native;
   const { selection, source, masks, scrollBox } = plan;
   let dx = 0, dy = 0, minRow = 0, maxRow = lines.length - 1, minColumn = 0, maxColumn = screen.terminal.columns;
@@ -259,14 +291,14 @@ export default function cleanFrameCopy(pi: ExtensionAPI) {
     if (!owned()) ctx.ui.notify("选区去框未接入：接口不兼容或已有其他 hook，保留原行为。", "warning");
   });
   pi.registerCommand("clean-copy", {
-    description: "ALPS 外框不参与选区高亮与复制：on、off、status（临时开关）",
+    description: "ALPS 消息和输入框外框不参与选区高亮与复制：on、off、status（临时开关）",
     handler: async (args, ctx) => {
       const action = args.trim().toLowerCase();
       if (!["", "on", "off", "status"].includes(action)) { ctx.ui.notify("用法：/clean-copy on | off | status", "warning"); return; }
       if (action === "on") enabled = true;
       if (action === "off") enabled = false;
       if (action === "on" || action === "off") lastScreen?.requestRender?.();
-      ctx.ui.notify(`高亮与复制去框：${active && enabled && owned() ? "开启" : "关闭"}；仅 Pi fullscreen 内部选区，保留选中的标题／时间文字。`, "info");
+      ctx.ui.notify(`高亮与复制去框：${active && enabled && owned() ? "开启" : "关闭"}；仅 Pi fullscreen 内部选区，消息保留选中的标题／时间，输入框仅保留正文。`, "info");
     },
   });
   pi.on("session_shutdown", () => {
