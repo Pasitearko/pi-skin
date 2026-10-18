@@ -1,63 +1,153 @@
-# Pi Personalization
-[中文完整说明](README.md) · [MIT](LICENSE) · [npm](https://www.npmjs.com/package/@jiuliyear/pi-personalization) · [Pi catalog](https://pi.dev/packages/@jiuliyear/pi-personalization) · [Recommendations](docs/RECOMMENDATIONS.md)
+# pi-skin
 
-An installable Pi package distilled from a locally customized setup: weather, quota row, per-round timer, OpenAI Fast switch, message timestamps, prompt timeline, whole-frame collapse/expand, clean selection/copy, and a minimal theme.
+**Pi terminal UI customization: frames, clean copying, weather, timers, quota and mouse interactions.**
 
-## Platform profiles
+[中文](README.md) · [Linux configuration](linux/README.en.md) · [Original npm package](https://www.npmjs.com/package/@jiuliyear/pi-personalization) · [MIT](LICENSE)
 
-- **Windows / original package:** root `extensions/`, `patches/` and the Windows Terminal example. This update adds clean multiline input selection; the separate Linux profile is unchanged.
-- **Linux / CachyOS + Kitty:** see **[linux/README.md](linux/README.md)** for the separate Pi **1.3.0** local package, seven current components, sanitized settings/keybindings, Nerd Font icons, fixed green/red tool frames, PipeWire audio support (bring your own audio), and version/hash-guarded Linux patches.
+## Preview
 
-The root npm/git package does not automatically load `linux/`. Clone the repository and follow the Linux instructions; do not load duplicate components from both profiles. No new npm release is made by this addition.
+![Pi interface with frames, timestamps, weather, quota and bottom metrics](docs/previews/overview.png)
 
-## Previews
+> A demo render of the original package with fictional conversations and values—not a Linux terminal capture. See the [Linux guide](linux/README.en.md) for its layout and settings.
 
-### Actual terminal screenshot
+| Click anywhere to expand / collapse | Copy text without decorative borders |
+|:---:|:---:|
+| ![Collapsed and expanded states](docs/previews/frame-click.png) | ![Selection and clipboard comparison](docs/previews/clean-selection.png) |
 
-![Pi running in Windows Terminal on Windows 11 with PowerShell 7.6](docs/previews/windows-terminal-real.png)
+<details>
+<summary>Actual Windows Terminal screenshot</summary>
 
-Windows 11, Windows Terminal, PowerShell 7.6. The author explicitly chose to publish this original image without cropping, masking or image edits. This is an actual terminal capture, not a fictional-data demo.
+![Windows 11 / Windows Terminal / PowerShell 7.6](docs/previews/windows-terminal-real.png)
 
-### Controlled demo previews
+Original terminal capture published with the author's permission. Other previews are demo renders: [image provenance](docs/previews/README.md).
 
-The following three images are privacy-safe demo renders, not screenshots of private sessions or accounts. Real Pi / ALPS frames and actual click/selection handlers are used with fictional dialogue, paths, timestamps and values; footer rows are illustrative. Terminal fonts and platform behavior may differ.
+</details>
 
-![Interface overview with fictional status values](docs/previews/overview.png)
+## Choose a profile
 
-![Whole-frame click: compact and expanded states](docs/previews/frame-click.png)
+| | **Linux profile** | **Original package / Windows profile** |
+|---|---|---|
+| Entry | [`linux/`](linux/README.en.md) | Root `extensions/` and `patches/` |
+| Verified environment | CachyOS + Kitty, Pi **1.3.0** | Pi **1.2.0**; some adapters also support older versions |
+| Install | Clone, then `pi install ./linux` | npm or Git—choose one |
+| Highlights | 7 components, colored weather icons, green/red tool frames, PipeWire audio | 8 components, Fast toggle, `no-tool-bg` theme, Windows audio |
+| Reference | [English](linux/README.en.md) / [中文](linux/README.md) | [Features below](#features-and-commands) |
 
-![Native versus clean selection, including actual copied text](docs/previews/clean-selection.png)
-
-[Preview provenance and privacy notes](docs/previews/README.md)
+**Do not load both profiles.** The repository is `pi-skin`; the original npm package remains `@jiuliyear/pi-personalization`.
 
 ## Install
 
+### Linux · CachyOS / Kitty
+
 ```sh
-pi install npm:@jiuliyear/pi-personalization
+git clone https://github.com/Pasitearko/pi-skin.git
+cd pi-skin
+pi install npm:alps-pi@0.3.4
+pi install npm:@specode/pi-subscription-usage@1.3.1
+pi install ./linux
 ```
 
-Alternatively, install from GitHub: `pi install git:github.com/Pasitearko/pi-personalization`. **Choose one source; do not load both copies.** The npm package includes the `pi-package` discovery keyword and a preview image. [Pi catalog](https://pi.dev/packages) indexing may lag behind npm publication.
+Merge the [Linux settings](linux/README.en.md#configuration); explicitly apply the Linux patches if you want the advanced bottom layout. Disable existing same-name local components first. Do not move the clone after installing a local package.
 
-Restart Pi or use /reload. Node 22.19.0+ (24 LTS recommended); Pi 1.2.0 recommended. The private frame/selection adapters also recognize tested 1.1.0 and 1.0.4. Unsupported layouts fail closed to native behavior. Fullscreen and terminal mouse/Unicode support are required for advanced interactions.
+### Original package / Windows
 
-Base installation never overwrites installed plugins, settings, accounts or fonts. Optional advanced ALPS changes are explicit, exact-version/per-file-SHA-256 guarded, and reversible. Install alps-pi@0.3.4 and @specode/pi-subscription-usage@1.3.1 with Pi, clone this repo, run `node tools/setup.mjs` to preflight, then `node tools/setup.mjs --apply` only after reviewing the output and exiting Pi. The settings helper is separately opt-in: `--settings --apply` fills absent appearance leaves; `--replace-settings` explicitly adopts only the example's appearance leaves.
+Node **22.19.0+**; Pi **1.2.0** recommended. Mouse enhancements require fullscreen and SGR mouse support.
 
-Mouse: an unmodified left-click release toggles already-collapsible frames; dragging, links and child buttons take priority. ALPS decorations remain drawn but are excluded from Pi's highlight and copied text. Real code indentation, trees, tables and literal box glyphs remain. This does not control terminal-owned Shift selection.
+```sh
+# Published npm version
+pi install npm:@jiuliyear/pi-personalization
 
-### Multiline input selection update (GitHub source)
+# OR latest Git source; do not install alongside the npm version
+pi install git:github.com/Pasitearko/pi-skin
+```
 
-The main input editor now excludes its top/bottom status rows, side rails and decorative padding from both highlighting and copied text. Selected indentation, blank lines, Chinese, emoji and literal box characters remain; autocomplete retains native selection. Only verified rendered metadata is used, with conservative native fallback. Input text and cursor are not changed.
+Restart or `/reload`; optionally select `no-tool-bg` in Pi settings. Base installation does not patch ALPS or replace your settings. The latest multiline input-selection fix is in Git, not yet published to npm.
 
-Update the Git-installed extension **and** explicitly apply the latest guarded `bottom-input/editor.ts` advanced patch above while Pi is closed, then restart Pi. The extension alone does not patch ALPS. This GitHub update has **not** been published to npm. `clean-frame-copy` now additionally recognizes Pi **1.3.0**, with **36/36** real-component tests on both Pi **1.2.0 and 1.3.0**. Other extensions' version gates and the independent `linux/` profile are unchanged. Real-terminal appearance still requires user confirmation.
+## Features and commands
 
-Fast is off for new sessions: /fast ok, /fast no. It requests priority, not proof of server acceptance, and may affect costs/limits. Quota requires the upstream plugin and your own sign-in; no balances/accounts are bundled. Weather uses explicit example coordinates (override PI_WEATHER_LOCATIONS with a JSON city list), sends coordinates to Open-Meteo, and displays weather data in Asia/Shanghai. It does not auto-geolocate.
+| Feature | Linux | Original package | Usage |
+|---|:---:|:---:|---|
+| Weather | ✓ | ✓ | `/weather` refreshes; `/weather next` switches cached cities |
+| Round timer / outcome | ✓ | ✓ | Working → Completed / Failed / Cancelled; `/sound-test` checks audio |
+| Subscription quota | Shared timer row; wraps when narrow | Shared timer row; wraps when narrow | Requires `@specode/pi-subscription-usage` and your own sign-in |
+| Message timestamps | ✓ | ✓ | Local message time, displayed automatically |
+| Prompt navigation | `/rail` | `/timeline` | `on` / `off` / `status` / `list` |
+| Whole-frame click | ✓ | ✓ | `/frame-clicks on`, `off`, `status` |
+| Clean selection / copy | ✓ | ✓ | `/clean-copy on`, `off`, `status` |
+| Fixed green/red tool frames | ✓ | — | Normal `#4ADE80`; error `#F87171`; diff colors unchanged |
+| OpenAI Fast | — | ✓ | `/fast`, `/fast ok`, `/fast no`; off in new sessions |
+| Minimal theme | Keep Pi's theme | `no-tool-bg` | Reduce large tool background blocks |
 
-Paths and tools are portable across Windows/macOS/Linux, but terminals differ. The audio and Unicode-file opener enhancements are Windows-specific; other systems retain their native behavior. No claim is made that every terminal or future Pi release has identical mouse/link/font behavior.
+- **Click:** an unmodified left-button release toggles an already-collapsible frame. Dragging, links and child buttons take priority.
+- **Copy:** preserves indentation, blank lines, Chinese, emoji and literal box glyphs; excludes only verified decorations. Terminal-owned Shift selection is unchanged.
+- **Input-frame copying:** the original package requires the extension and matching ALPS `bottom-input/editor.ts` patch; Linux uses a separate editor adapter without that patch.
+- **Fast:** requests `service_tier=priority`; it does not prove server acceptance and may affect usage. Estimated cost is not a bill.
 
-Original source, tools, theme, generated notification tone and docs are MIT. Modified upstream files retain their MIT notices. Fonts are not bundled: the optional letters-only italic build recipe preserves SIL OFL obligations. Third-party skills and MCP servers are recommendations, not redistributed credentials or code.
+## Configuration
 
-[CI](https://github.com/Pasitearko/pi-personalization/actions/workflows/ci.yml) runs tests and privacy/package checks on Windows, macOS and Linux. Automated checks do not certify every real terminal's behavior.
+| Setting | Linux file | Original package file |
+|---|---|---|
+| Pi / ALPS appearance | [`settings.example.json`](linux/config/settings.example.json) | [`examples/settings.json`](examples/settings.json) |
+| Pi shortcuts | [`keybindings.example.json`](linux/config/keybindings.example.json) | [Extension commands and guides](extensions/) |
+| Plugin versions | [`packages.example.json`](linux/config/packages.example.json) | Pinned dependencies below |
+| Terminal fonts / input | [Kitty fonts](linux/config/kitty-fonts.example.conf) · [Input](linux/config/kitty-input.example.conf) | [Windows Terminal](examples/windows-terminal.json) |
+| MCP templates | [GitHub](linux/config/mcp-github.example.json) · [Playwright](linux/config/mcp-playwright.example.json) | Configure your chosen MCP plugin |
 
-Development: `npm ci --ignore-scripts`, `npm test`, `npm run check:privacy`, `npm run package:check`. The test runner patches only this repository's disposable development dependencies. It never writes to the installed Pi or private backup.
+Merge individual fields; keep existing authentication, models and packages. Install fonts separately: [font build recipe](fonts/README.md).
 
-See the Chinese README for all commands, guarded patch rollback, font recipe, recommendations, limitations and uninstall instructions.
+### Weather locations
+
+`PI_WEATHER_LOCATIONS`: a JSON array of 1–5 cities with `id`, `name`, `latitude`, `longitude`.
+
+```sh
+export PI_WEATHER_LOCATIONS='[{"id":"london","name":"London","latitude":51.5074,"longitude":-0.1278}]'
+```
+
+```powershell
+$env:PI_WEATHER_LOCATIONS = '[{"id":"london","name":"London","latitude":51.5074,"longitude":-0.1278}]'
+```
+
+Defaults: Shanghai / Strasbourg / Tokyo. No geolocation or API key. Updates every 15 minutes; data timestamps use Asia/Shanghai. Coordinates and source IP reach [Open-Meteo](https://open-meteo.com/); follow its [terms](https://open-meteo.com/en/terms). Restart Pi after changing the variable.
+
+## Advanced patches
+
+Pinned dependencies: **ALPS 0.3.4**, **subscription-usage 1.3.1**. Exit Pi first; run the appropriate tool from the repository root.
+
+Installing the npm/Git package does not create a checkout in your working directory. If you have not cloned it, obtain the patch tools first; do not install the original package again:
+
+```sh
+git clone https://github.com/Pasitearko/pi-skin.git
+cd pi-skin
+```
+
+| Action | Linux | Original package |
+|---|---|---|
+| Check only | `node linux/tools/patches.mjs` | `node tools/setup.mjs` |
+| Apply with backup | Add `--apply` to the command above | Add `--apply` to the command above |
+| Undo | `node linux/tools/patches.mjs --undo <receipt> --apply` | `node tools/setup.mjs --undo <receipt> --apply` |
+| Optional MCP UI noise filter | [Separate patch and options](linux/compat/mcp-ui-filter/README.md) | — |
+
+For the original package, install the pinned dependencies first. Its settings helper also offers `--settings --apply` to fill missing appearance fields, and `--settings --replace-settings --apply` to replace example appearance fields. **These settings flags are not available in the Linux CLI.**
+
+Both tools accept `--agent-dir <dir>` and `--modules <dir>`. The default agent is `PI_CODING_AGENT_DIR` or `~/.pi/agent`. Version and SHA-256 guards reject unknown edits and symlink paths. Undo uses the printed receipt; it does not replace the entire settings file.
+
+## Compatibility and development
+
+| Scope | Support boundary |
+|---|---|
+| Linux | Verified on Pi 1.3.0 + Kitty; retest other versions / terminals |
+| Original package | Frame adapters: Pi 1.0.4 / 1.1.0 / 1.2.0; clean selection additionally supports 1.3.0, not all components |
+| Audio | Linux profile: PipeWire + your own file; original package: Windows MCI, silent fallback on macOS/Linux |
+| Privacy | No bundled authentication, sessions or real quota; weather and optional plugins use their configured network services |
+
+```sh
+# Linux tests; for the original package, run the same commands at repository root
+cd linux
+npm ci --ignore-scripts
+npm test
+npm run check:privacy
+```
+
+Uninstall Linux with `pi remove <local source shown by pi list>`. For the original package, use `pi remove npm:@jiuliyear/pi-personalization` or `pi remove git:github.com/Pasitearko/pi-skin`, matching the installed source. If installed via the old address, follow `pi list`. Undo advanced patches before removing extensions.
+
+[Security](SECURITY.md) · [Linux inventory](linux/INVENTORY.md) · [Skills / MCP recommendations](docs/RECOMMENDATIONS.md) · [Third-party licenses](THIRD_PARTY_NOTICES.md)

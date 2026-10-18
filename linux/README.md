@@ -1,58 +1,50 @@
-# pi-skin · Linux / CachyOS / Kitty 个性化配置
+# pi-skin · Linux
 
-[返回项目首页](../README.md) · [Windows / 原基础包](../README.md#快速安装基础包) · [安全说明](../SECURITY.md)
+**CachyOS + Kitty + Pi 1.3.0：细线消息框、彩色天气、计时 / 额度共享行、干净复制和提问导航。**
 
-这里单独保存作者在 **CachyOS Linux + Kitty + Pi 1.3.0** 下使用的配置和本地组件。它不是整台电脑的备份，也不是把 Windows 配置原样套到 Linux。
+[English](README.en.md) · [项目首页](../README.md) · [配置清单](INVENTORY.md) · [安全说明](../SECURITY.md)
 
-- **原根目录基础包、Windows 截图、主题和补丁保持不变。** GitHub 仓库现名为 `Pasitearko/pi-skin`，旧地址会重定向；根目录安装仍对应原基础包，不会自动加载 `linux/`。原 npm 包名不变。
-- Linux 版本是独立的本地 Pi package（`private: true`），目前只通过克隆仓库安装，不发布/覆盖原 npm 包。
-- 不要同时加载原基础包、`linux/` 和 `~/.pi/agent/extensions/` 下的同名副本，否则会重复 widget、命令和运行时 hook。
-
-完整的收录/排除清单与同步边界见 **[INVENTORY.md](INVENTORY.md)**。本次只整理 Linux，不修改 Windows 内容或重新发布原 npm 包。
-
-## 目录与包含内容
+## 布局与交互
 
 ```text
-linux/
-├── config/       脱敏后的外观设置、快捷键、Kitty 与可选 MCP 模板
-├── compat/       独立可选的 MCP UI 噪声修复与回归测试
-├── extensions/   当前 Linux 使用的 7 个本地组件及测试
-├── patches/      固定版本 ALPS / quota 源码修改及 SHA-256 manifest
-├── tools/        默认只检查的补丁工具、隔离测试启动器
-└── tests/        Linux 包/加载器/配置/补丁安全检查
+┌ USER · 14:20 ────────────────────────────────────┐    ● ← 提问刻度条
+│ 帮我检查这个函数                                 │    │
+└──────────────────────────────────────────────────┘    ●
+┌ TOOL · read ─────────────────────────────────────┐    │
+│ src/example.ts                  点击展开 ↕       │    ●
+└──────────────────────────────────────────────────┘
+  ☀ Shanghai · 22°C          ← 城市区域可点击切换
+┌ INPUT ───────────────────────────────────────────┐
+│ 输入消息…                                        │
+└ input / output · cache · tok/s · cost ───────────┘
+  Completed 12s                       quota remaining
 ```
 
-| 组件 | Linux 下的行为 |
-|---|---|
-| `weather-row` | 彩色单列 Nerd Font 图标；按晴/夜/云/雨/雪等天气切换，城市点击切换；15 分钟刷新 |
-| `working-timer` | Working / Completed / Failed / Cancelled；最终 `agent_settled` 才响一次，不因普通工具报错、重试或历史恢复重复响；与额度共享行 |
-| `message-timestamps` | 消息框本地时间戳 |
-| `tick-rail` | 右侧提问刻度条、预览和跳转；`/rail on/off/status/list`，`Alt+[` / `Alt+]` / `Alt+J` |
-| `frame-click-toggle` | 已有可折叠框的整框点击展开/收缩，拖选不切换；`/frame-clicks` |
-| `clean-frame-copy` | 选区高亮/复制去掉 ALPS 装饰边框；包括多行输入框，保留代码缩进、空行、字面框线和 Unicode；`/clean-copy` |
-| `tool-status-style` | 只对工具外框使用固定绿/红，移除工具背景与原生 CUSTOM 消息正文背景；保留其他消息与整体主题 |
+*布局示意，数据为虚构示例；不是实机截图，实际宽度与图标取决于字体。*
 
-工具正常/执行中外框为 `#4ADE80`，错误为 `#F87171`，不依赖终端 ANSI 绿色色槽。**代码 diff 加减行仍沿用原主题配色**，不会被这个组件改色。CUSTOM 只处理原生默认 Box，不抹掉注册 renderer 的自定义背景。
+| 整框点击 | 干净选区与复制 |
+|:---:|:---:|
+| ![折叠与展开演示](../docs/previews/frame-click.png) | ![装饰线不进入复制文本](../docs/previews/clean-selection.png) |
 
-## 版本与限制
+上图演示共用的交互机制，来自原基础包渲染，不是 Linux 实机截图。[预览来源](../docs/previews/README.md)
 
-| 项目 | 当前验证版本 / 要求 |
-|---|---|
-| Pi | **1.3.0**；选区/整框点击/工具样式有精确版本保护，其余组件也仅验证此版本，升级后必须重新测试 |
-| ALPS | **0.3.4**，renderer 18；高级布局需要下文 Linux 补丁 |
-| subscription-usage | **1.3.1**；独立安装并自行登录，不附带任何账号或额度数据 |
-| 终端 | Kitty；fullscreen、SGR mouse、真彩色；其他 Linux 终端未做实机验收 |
-| 字体 | 推荐 Maple Mono NF CN 或覆盖相应 Nerd Font 图标的字体；可参考 `config/kitty-fonts.example.conf`，不含字体二进制 |
-| 音频 | PipeWire 的 `/usr/bin/pw-play` + 自备可播放的音频文件 |
-| Node | >= 22.19.0，建议 24 LTS；依赖版本由本目录 lockfile 固定 |
+## 功能
 
-`config/settings.example.json` 是**外观字段示例，不是可覆盖整份 settings 的备份**。保留当前实际选择：thinking 展开、硬件光标、隐藏全屏滚动条、启用 codemode、ALPS 边框与动画、隐藏 ALPS elapsedTime。没有默认 provider/model、设备 ID、认证或私人路径；未固定主题，保留 Pi 的 `system` 行为。
+| 组件 | 功能 | 操作 |
+|---|---|---|
+| `weather-row` | 单列彩色天气图标、3 个默认城市、15 分钟更新、缓存与失败退避 | `/weather`；点击城市切换 |
+| `working-timer` | Working / Completed / Failed / Cancelled；最终结束才响一次；与额度共享行 | 自动；`/sound-test` |
+| `message-timestamps` | 消息标题显示产生时的本地时间 | 自动 |
+| `tick-rail` | 右侧提问位置、预览与跳转 | `/rail`；`Alt+[` / `Alt+]` / `Alt+J` |
+| `frame-click-toggle` | 点击已有可折叠框任意非交互区域展开 / 收缩；拖选不切换 | `/frame-clicks on/off/status` |
+| `clean-frame-copy` | 去除消息框 / 多行输入框装饰的高亮和复制；保留真实正文 | `/clean-copy on/off/status` |
+| `tool-status-style` | 🟩 正常框 `#4ADE80`；🟥 错误框 `#F87171`；无大块工具 / 原生 CUSTOM 背景 | 自动；保留 diff 和自定义 renderer 配色 |
 
-## 安装 / 恢复
+依赖 ALPS 的功能在不支持的布局上保留原生行为。Linux 输入框去框由 ALPS 0.3.4 编辑器适配提供，无需原基础包的 `bottom-input/editor.ts` 补丁。终端自己的 Shift 选区不受影响。
 
-### 1. 克隆并选择 Linux 包
+## 安装
 
-先退出 Pi，备份自己的配置，并停用同名扩展副本。**本机已经有这些组件时不需要再次安装**；本目录用于备份和迁移。
+要求：**Pi 1.3.0**、Node **22.19.0+**（建议 24 LTS）、Kitty fullscreen / SGR mouse / 真彩色。图标建议使用 **Maple Mono NF CN**。
 
 ```sh
 git clone https://github.com/Pasitearko/pi-skin.git
@@ -62,77 +54,171 @@ pi install npm:@specode/pi-subscription-usage@1.3.1
 pi install ./linux
 ```
 
-本地包从克隆路径加载，不会把源码复制进 `~/.pi/agent/extensions/`，因此不要移动/删除已注册的克隆目录。它不会自动修改终端、安装音频文件或导入账号。
+1. 停用原基础包或 `~/.pi/agent/extensions/` 中的同名副本，避免重复加载。
+2. 按下节合并配置；高级布局需显式应用补丁。
+3. 重启或 `/reload`。本地包从克隆路径加载，安装后不要移动该目录。
 
-### 2. 合并配置（手动，不覆盖账号）
+已在本机使用同名组件时无需重复安装。Linux 包独立于原 npm 包，不会自动修改终端或导入账号。
 
-将 `config/settings.example.json` 的外观叶子字段合并到 `~/.pi/agent/settings.json`，将 `config/keybindings.example.json` 合并到 `~/.pi/agent/keybindings.json`。先保留原件；已有的 provider、model、packages、其他扩展设置不要覆盖。
+## 配置
 
-快捷键示例把 **Ctrl+F** 用于 Pi 全屏搜索，向右移动保留方向键。ALPS 快捷键属于 ALPS 的设置，不等于终端全局快捷键。
+### 文件位置
 
-`config/packages.example.json` 另外记录了本机的 7 个上游插件及版本，**只是按需安装的清单，不会自动安装**：billion-context、imagegen、pi-mcp-adapter、pi-web-access、plannotator、ALPS、subscription-usage。它们各自需要自己的配置和授权。只有选择 pi-mcp-adapter 时才参考 `-builtin:mcp`，避免两个 MCP 实现重复加载；不用适配器时不要禁用内置 MCP。
+| 示例 | 合并位置 / 用途 |
+|---|---|
+| [`config/settings.example.json`](config/settings.example.json) | `~/.pi/agent/settings.json`；Pi / ALPS 外观字段 |
+| [`config/keybindings.example.json`](config/keybindings.example.json) | `~/.pi/agent/keybindings.json`；Pi 快捷键 |
+| [`config/packages.example.json`](config/packages.example.json) | 可选插件与固定版本清单；不自动安装 |
+| [`config/kitty-fonts.example.conf`](config/kitty-fonts.example.conf) | Kitty 字体片段 |
+| [`config/kitty-input.example.conf`](config/kitty-input.example.conf) | Kitty 输入片段，放在现有 include 之后 |
+| [`config/mcp-github.example.json`](config/mcp-github.example.json) | 适配器用户合并 github 项到 `~/.config/mcp/mcp.json` |
+| [`config/mcp-playwright.example.json`](config/mcp-playwright.example.json) | 按需合并到 `~/.pi/agent/mcp.json` |
 
-### 可选：Kitty 输入与 MCP
+**逐项合并，不覆盖整份文件；保留已有模型、认证和 packages。**
 
-- 字体片段：`config/kitty-fonts.example.conf`。输入片段：`config/kitty-input.example.conf`，在已有 Kitty include 之后手动合并。后者添加 **Ctrl+左键打开链接**（包括 Pi 捕获鼠标时），保留普通左键供 Pi/选区使用，并把 Ctrl+V 传给 Pi 处理图片粘贴；终端粘贴用 Ctrl+Shift+V。Kitty 默认 Ctrl+Shift+左键仍可用。
-- `config/mcp-github.example.json`：使用 pi-mcp-adapter 时，可将其中的 github 项手动合并进 `~/.config/mcp/mcp.json`。示例用 PATH 中的 `github-mcp-server`，需自行安装/登录；`openUi: false` 取消 MCP App 表单，直接调用工具；示例额外设 `approveTools: true`，通过 Pi 的工具确认来批准调用。**UI 展示、工具确认和 OAuth 权限是三件独立的事**；`repo` scope 包含私人仓库及写权限，不需要写入时可给参数添加 `--read-only`。这份公开模板不修改本机已有的确认策略。
-- `config/mcp-playwright.example.json`：按需合并进 `~/.pi/agent/mcp.json`，使用独立 Chrome 会话，不附带个人浏览器资料。
-- 两份 MCP 文件只是模板，不要用它们覆盖整份已有配置；不需要对应插件时不要加入。修改后 `/reload`。插件 OAuth 认证按上游流程自行完成。
-- 如需保留 MCP UI，同时使用沉浸式翻译，可阅读 [可选 UI 噪声修复](compat/mcp-ui-filter/README.md)。该补丁独立安装，不是默认外观补丁的一部分。
+### Pi / ALPS 参数
 
-### 3. 可选：恢复底部布局等高级修改
+以下是仓库示例值，不是 Pi / ALPS 的上游默认值。`alps-pi.*` 表示 settings 中的嵌套字段。
 
-必须从仓库根目录运行 **Linux 工具**，不要运行根目录的 Windows 历史补丁工具：
+| 参数 | 示例值 | 效果 |
+|---|---|---|
+| `defaultThinkingLevel` | `"high"` | 默认推理级别，模型需支持 |
+| `hideThinkingBlock` | `false` | 显示 thinking 块 |
+| `defaultTools` | `["+codemode"]` | 在默认工具上加入 codemode |
+| `showHardwareCursor` | `true` | 硬件光标 |
+| `fullscreenScrollbar` | `"hidden"` | 隐藏全屏滚动条 |
+| `alps-pi.chromeFrame.enabled` | `true` | 消息框 |
+| `alps-pi.chromeFrame.assistantFrame` | `true` | Assistant 外框 |
+| `alps-pi.chromeFrame.toolCompactMode` | `"compact"` | 紧凑工具框 |
+| `alps-pi.chromeFrame.compactEditTool` | `false` | 不启用 compactEditTool |
+| `alps-pi.fixedBottomEditor.enabled` | `true` | 固定底部输入框 |
+| `alps-pi.beautifiedInput.enabled` | `true` | 美化输入框 |
+| `alps-pi.inputMetrics.*` | 见下表 | 底部指标 |
+| `alps-pi.footer.enabled` | `true` | Footer |
+| `alps-pi.animations.enabled` | `true` | 状态动画 |
+| `alps-pi.animations.randomMode` | `false` | 不随机切换动画 |
+| `alps-pi.animations.working/thinking/tool` | `crush / shimmer / pipeline` | 分阶段动画 |
+| `alps-pi.animations.width` / `fps` | `"default"` / `16` | 动画宽度 / 帧率 |
+
+| `alps-pi.inputMetrics` 字段 | inputTokens | outputTokens | cacheHit | tokenSpeed | elapsedTime | cost |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| 示例值 | `true` | `true` | `true` | `true` | `false` | `true` |
+
+ALPS 隐藏 elapsedTime，独立 working-timer 负责本轮耗时；cost 为估算值，不是账单。未固定主题，保留 Pi 的主题选择。
+
+### 快捷键
+
+| 操作 | 快捷键 / 设置来源 |
+|---|---|
+| 全屏搜索 | `Ctrl+F`；Pi `tui.altScreen.search` |
+| 光标向右 | `Right`；Pi `tui.editor.cursorRight` |
+| 上一个 / 下一个提问 | `Alt+[` / `Alt+]`；tick-rail |
+| 提问列表 | `Alt+J`；tick-rail |
+| 暂存输入 | `Alt+S`；ALPS `shortcuts.stashEditor` |
+| 复制 / 剪切输入 | `Ctrl+Alt+C` / `Ctrl+Alt+X`；ALPS |
+| 滚动对话 | `Super+Up` / `Super+Down`；ALPS |
+| 输入开头 / 结尾 | `Super+Shift+Up` / `Super+Shift+Down`；ALPS |
+| 上一条 / 下一条用户消息 | `Ctrl+Shift+U` / `Ctrl+Shift+I`；ALPS |
+| 上一条 / 下一条 Assistant 消息 | `Ctrl+Alt+,` / `Ctrl+Alt+.`；ALPS |
+| 对话底部 | `Ctrl+Shift+G`；ALPS |
+| 打开链接 | `Ctrl+左键`；Kitty 片段；默认 `Ctrl+Shift+左键` 仍可用 |
+| 图片粘贴给 Pi | `Ctrl+V`；Kitty `no_op` 将按键传给 Pi |
+| 终端粘贴 / 复制 | `Ctrl+Shift+V` / `Ctrl+Shift+C`；Kitty |
+
+终端、窗口管理器可能先截获按键；此包不更改系统快捷键。
+
+### 命令
+
+| 命令 | 功能 |
+|---|---|
+| `/weather` 或 `/weather refresh` | 刷新当前城市；15 秒内不重复手动刷新 |
+| `/weather next` | 切换城市缓存，不额外请求 |
+| `/weather <city-id>` | 切换到指定城市 |
+| `/rail on` / `off` / `status` / `list` | 提问刻度条与列表 |
+| `/frame-clicks on` / `off` / `status` | 整框点击 |
+| `/clean-copy on` / `off` / `status` | 干净复制 |
+| `/sound-test` | 测试提示音，不创建计时轮次 |
+
+`/rail` 无参为 status；刻度与前后跳转需 fullscreen、至少 3 个提问，列表可从 1 个提问使用。`/rail off` 隐藏刻度，不解绑导航快捷键。`/frame-clicks`、`/clean-copy` 无参查看状态，默认开启，开关不写入 settings。
+
+### 环境变量：天气与声音
+
+| 变量 | 值 / 默认行为 |
+|---|---|
+| `PI_WEATHER_LOCATIONS` | 1–5 个城市的 JSON 数组；默认上海 / 斯特拉斯堡 / 东京 |
+| `PI_COMPLETION_SOUND` | 建议使用自备音频的绝对路径；默认 `~/.local/share/pi/sounds/minecraft-exp-orb.wav`，仓库不附带该文件 |
 
 ```sh
-# 默认只检查版本、源文件 SHA-256 和补丁 SHA-256
-node linux/tools/patches.mjs
-# 全部检查通过后，明确写入并生成 undo receipt
-node linux/tools/patches.mjs --apply
-```
-
-这些补丁保存本机实际的底部指标/`` 金额图标、tok/s 保存与模型切换保留、消息框适配、终端输出处理、额度共享桥等源码修改；Windows 专用文件链接分支保留其平台判断，不修改 Kitty 设置。
-
-工具复用项目已有的路径边界、symlink 拒绝、逐文件哈希、先备份后写入和回滚逻辑，**使用本目录独立 manifest**。只接受固定上游版本的原文件或本 Linux 补丁版本；已有其他本地改动（包括旧 Windows 补丁）会拒绝覆盖。不要强制替换；先保存旧改动，再在干净的固定版本安装上应用。
-
-可用 `--agent-dir /path/to/agent --modules /path/to/node_modules` 指定路径。恢复时使用工具打印的 receipt：
-
-```sh
-node linux/tools/patches.mjs --undo /path/to/patch-undo.json --apply
-```
-
-undo 同样拒绝覆盖后续变更；不会还原整份 settings。`personalization-undo/` 只保留在本机，不能上传。
-
-最后重新启动 Pi 或 `/reload`。新版本升级后先验证，不要关闭版本保护强行适配。
-
-## Linux 提示音
-
-**不分发本机的游戏音效，也不包含任何 WAV。** 需要自己准备拥有使用权的音频。默认路径保持本机约定：
-
-```text
-~/.local/share/pi/sounds/minecraft-exp-orb.wav
-```
-
-该文件名只是兼容路径，不表示仓库提供该声音。发布副本还增加了可选环境变量，可以指向任意自备文件（绝对路径）：
-
-```sh
+export PI_WEATHER_LOCATIONS='[{"id":"london","name":"London","latitude":51.5074,"longitude":-0.1278}]'
 export PI_COMPLETION_SOUND="$HOME/.local/share/pi/sounds/my-completion.wav"
 pi
 ```
 
-Fish 使用 `set -gx PI_COMPLETION_SOUND "$HOME/.local/share/pi/sounds/my-completion.wav"`。测试命令 `/sound-test`；每播放器音量 100%，**不修改系统音量、默认输出或路由**。没有 `pw-play`、文件缺失或播放失败时只提示失败，不影响本轮结果；不需要声音时可不加载 working-timer，或自行配置无声文件。源码保留 Windows MCI 分支，但此 Linux 包没有 Windows 音频资产，不替代原 Windows 包。
+Fish 对应 `set -gx PI_COMPLETION_SOUND "$HOME/.local/share/pi/sounds/my-completion.wav"`。
 
-与本机源码相比，发布副本只增加音频路径环境变量，并修正测试的依赖定位和旧音量/平台断言；没有改动正在运行的本机组件。
+- 天气使用 [Open-Meteo](https://open-meteo.com/)；每 15 分钟边界更新，失败按 1 / 2 / 4 / 8 分钟退避。显示时间为 Asia/Shanghai，不自动定位。坐标和源 IP 会发送到服务，遵守其[条款](https://open-meteo.com/en/terms)。
+- 城市字段：`id`（唯一，`^[a-z0-9-]{1,32}$`）、`name`（非空，最多 40 个 JS 字符单元，无控制字符）、`latitude`（−90～90）、`longitude`（−180～180）。任一条非法即回退默认城市；修改后重启 Pi。
+- 固定请求超时 12 秒；天气缓存：agent 目录下 `cache/weather-cities-v1.json`。
+- 声音需要 `/usr/bin/pw-play`（PipeWire），每播放器音量 100%，不改系统音量。最终结束（含 Failed / Cancelled）才播放一次；重试和普通工具错误不重复响。缺文件 / 播放失败不影响本轮结果。
 
-## 天气、额度与隐私
+### 可选插件与 MCP
 
-- 默认城市为公开示例 **上海 / 斯特拉斯堡 / 东京**，不读取系统定位；启动时预取所有已配置城市，按 15 分钟边界更新，失败退避。
-- 数据来源：[Open-Meteo](https://open-meteo.com/)。请求会把配置的坐标与源 IP 暴露给服务；遵守其[使用条款与署名要求](https://open-meteo.com/en/terms)。天气缓存位于 Pi agent 目录的 `cache/weather-cities-v1.json`，不在本仓库。
-- 可用 `PI_WEATHER_LOCATIONS` 自定义 1–5 个城市，格式见[项目天气说明](../README.md#天气位置)；不要把住所坐标提交到 Git。移除/停用 weather-row 可停止自动请求。
-- 额度查询与 OpenAI 登录由独立的 subscription-usage 上游插件负责，tick-rail/计时组件只接共享行和 UI；不附带认证和实际余额。
-- 不上传原始 auth/models/MCP 配置及缓存、会话、web-search API 配置、cookies、设备 ID、音频、字体、截图、私有备份、node_modules，也不包含 Niri、蓝牙、PAM、应用配置等非 Pi 桌面设置。MCP 仅提供经过审阅、不含认证/私人路径的 example 模板。
+| 插件 | 固定版本 | 用途 |
+|---|---|---|
+| `alps-pi` | `0.3.4` | 消息框、输入框、底部布局 |
+| `@specode/pi-subscription-usage` | `1.3.1` | 订阅额度；需自己的登录 |
+| `billion-context` | `0.1.201` | 长会话上下文管理 |
+| `@crazygit/pi-codex-image-gen` | `0.2.2` | 图片生成 |
+| `pi-mcp-adapter` | `5.3.2` | MCP 适配器 |
+| `pi-web-access` | `0.42.0` | Web 工具 |
+| `@plannotator/pi-extension` | `0.28.23` | 计划审阅 |
 
-## 验证
+这些插件不随本包安装。仅在选择 pi-mcp-adapter 时参考清单中的 `-builtin:mcp`，避免重复加载 MCP 实现。
+
+| MCP 参数 | 示例值 | 含义 |
+|---|---|---|
+| GitHub `command` | `github-mcp-server` | 从 PATH 启动；自行安装并登录 |
+| GitHub `lifecycle` | `"lazy"` | 按需启动 |
+| GitHub `openUi` | `false` | 不打开 MCP App 表单 |
+| GitHub `approveTools` | `true` | 调用工具前要求交互确认；与 UI 开关独立 |
+| GitHub OAuth scope | `repo,read:org` | 包含私人仓库 / 写权限；无需写入时添加 `--read-only` |
+| Playwright | `@playwright/mcp@0.0.83` | Chrome；`--isolated --sandbox --no-webmcp` |
+
+模板不附带认证；修改后 `/reload`。保留 MCP UI 且使用沉浸式翻译时，可单独安装[消息噪声过滤补丁](compat/mcp-ui-filter/README.md)。
+
+## 补丁工具与参数
+
+高级补丁提供底部指标、tok/s 保存、消息框 / 输入框适配和额度共享桥。固定 **ALPS 0.3.4 / renderer 18**、**subscription-usage 1.3.1**；MCP 过滤补丁固定 **pi-mcp-adapter 5.3.2**。
+
+先退出 Pi，从仓库根目录运行：
+
+```sh
+# 外观补丁：默认检查，显式 --apply 才写入
+node linux/tools/patches.mjs
+node linux/tools/patches.mjs --apply
+
+# 可选：MCP UI 过滤，独立于外观补丁
+node linux/tools/patches.mjs --mcp-ui-filter
+node linux/tools/patches.mjs --mcp-ui-filter --apply
+```
+
+| 参数 | 作用 / 默认值 |
+|---|---|
+| 无参数 | 只检查外观补丁，不写入 |
+| `--apply` | 写入并生成本机 undo receipt |
+| `--mcp-ui-filter` | 只选择独立的 MCP UI 过滤补丁 |
+| `--agent-dir <dir>` | agent 路径；默认 `PI_CODING_AGENT_DIR` 或 `~/.pi/agent` |
+| `--modules <dir>` | 第三方依赖路径；默认 `<agent>/npm/node_modules` |
+| `--undo <receipt> --apply` | 撤回；MCP 补丁需同时加 `--mcp-ui-filter` |
+
+```sh
+node linux/tools/patches.mjs --undo /path/to/patch-undo.json --apply
+node linux/tools/patches.mjs --mcp-ui-filter --undo /path/to/mcp-undo.json --apply
+```
+
+版本、SHA-256、symlink 与后续文件修改均受检查；不会覆盖未知改动或整份 settings。**Linux CLI 没有 `--settings` / `--replace-settings`。** 更新插件后重新验证，不绕过版本保护。
+
+## 测试与卸载
 
 ```sh
 cd linux
@@ -141,10 +227,17 @@ npm test
 npm run check:privacy
 ```
 
-测试仅给本目录 `node_modules` 的开发依赖应用 Linux 补丁，不碰实际 `~/.pi/agent`。覆盖 7 个扩展加载、配置字段白名单、补丁哈希与拒绝未知文件、天气、最终状态音频调度、真实 Pi/ALPS 多行输入复制，以及 CUSTOM 背景与工具框颜色。测试使用假网络/播放器/clipboard，不调用模型、不查询私人额度、不播放声音。
+| 覆盖范围 | 用例 |
+|---|---:|
+| 包、配置、补丁安全与完整应用 / 撤回 | 7 |
+| 天气 | 57 |
+| 计时 / 音频 | 36 |
+| 干净复制集成 | 24 |
+| CUSTOM / 工具框渲染组合 | 960 |
+| 可选 MCP UI 过滤回归（[单独运行](compat/mcp-ui-filter/README.md)） | 11 |
 
-本次 Linux 本地通过：包/配置 7 项、天气 57 项、计时/音频 36 项、干净复制 24 个集成用例、CUSTOM/工具框 960 个渲染组合；另单独验证 MCP UI 噪声过滤 11 项。默认测试已在临时目录自动覆盖该补丁的 dry-run、应用、重复应用、冲突拒绝与逐字节撤回；另从 registry 干净安装 5.3.2，验证补丁、11 项回归及撤回。可选 MCP UI 测试和隔离安装方法见其 README，不由默认 `npm test` 自动运行。自动化不等于跨终端实机验收；其他 Pi 版本不作保证。
+测试仅操作隔离开发依赖，不改本机 Pi，不调用模型或真实额度，不播放声音。其他 Pi 版本 / 终端需自行验收。
 
-卸载：`pi remove /absolute/path/to/pi-skin/linux`（以 `pi list` 显示的 source 为准），重启 Pi；如有高级补丁，先用 receipt 撤回。手工合并的设置由你保留或恢复。
+卸载前用 receipt 撤回补丁，再 `pi remove <pi list 显示的本地 source>` 并重启。手工合并的设置自行保留或恢复。
 
-原创代码遵循仓库 [MIT](../LICENSE)，修改的 ALPS / subscription-usage 保留上游 [许可说明](../THIRD_PARTY_NOTICES.md)。
+不附带账号、会话、缓存、音频或字体二进制。[收录边界](INVENTORY.md) · [MIT](../LICENSE) · [第三方许可](../THIRD_PARTY_NOTICES.md)
