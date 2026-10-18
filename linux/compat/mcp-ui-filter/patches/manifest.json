@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "packages": [
+    {
+      "name": "pi-mcp-adapter",
+      "version": "5.3.2",
+      "files": [
+        {
+          "path": "host-html-template.ts",
+          "before": "87acfdda04339f460efba26e529cce7e79531480ff7717966c3bf09d7e3f8328",
+          "after": "9088ebb471851f3e400da33c2e1f873ec2e54c8281bf23f33c344fe41befc380",
+          "payload": "patches/pi-mcp-adapter/host-html-template.ts"
+        },
+        {
+          "path": "ui-server.ts",
+          "before": "ee64ffa91d12105f935d5b945b4f6179950369a057b241ef3144bb3efb88a048",
+          "after": "11674f78c7a014af158bb112f170a1b2d14513f6178a09f7ff3ca6b3081fa3fd",
+          "payload": "patches/pi-mcp-adapter/ui-server.ts"
+        }
+      ]
+    }
+  ]
+}

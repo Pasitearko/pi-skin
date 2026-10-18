@@ -1,18 +1,21 @@
-# Linux · CachyOS / Kitty 的 Pi 个性化配置
+# pi-skin · Linux / CachyOS / Kitty 个性化配置
 
 [返回项目首页](../README.md) · [Windows / 原基础包](../README.md#快速安装基础包) · [安全说明](../SECURITY.md)
 
 这里单独保存作者在 **CachyOS Linux + Kitty + Pi 1.3.0** 下使用的配置和本地组件。它不是整台电脑的备份，也不是把 Windows 配置原样套到 Linux。
 
-- **原根目录基础包、Windows 截图、主题和补丁保持不变。** 根目录 `pi install git:github.com/Pasitearko/pi-personalization` 仍安装原基础包，不会自动加载 `linux/`。
+- **原根目录基础包、Windows 截图、主题和补丁保持不变。** GitHub 仓库现名为 `Pasitearko/pi-skin`，旧地址会重定向；根目录安装仍对应原基础包，不会自动加载 `linux/`。原 npm 包名不变。
 - Linux 版本是独立的本地 Pi package（`private: true`），目前只通过克隆仓库安装，不发布/覆盖原 npm 包。
 - 不要同时加载原基础包、`linux/` 和 `~/.pi/agent/extensions/` 下的同名副本，否则会重复 widget、命令和运行时 hook。
+
+完整的收录/排除清单与同步边界见 **[INVENTORY.md](INVENTORY.md)**。本次只整理 Linux，不修改 Windows 内容或重新发布原 npm 包。
 
 ## 目录与包含内容
 
 ```text
 linux/
-├── config/       脱敏后的外观设置、快捷键、可选插件清单
+├── config/       脱敏后的外观设置、快捷键、Kitty 与可选 MCP 模板
+├── compat/       独立可选的 MCP UI 噪声修复与回归测试
 ├── extensions/   当前 Linux 使用的 7 个本地组件及测试
 ├── patches/      固定版本 ALPS / quota 源码修改及 SHA-256 manifest
 ├── tools/        默认只检查的补丁工具、隔离测试启动器
@@ -52,8 +55,8 @@ linux/
 先退出 Pi，备份自己的配置，并停用同名扩展副本。**本机已经有这些组件时不需要再次安装**；本目录用于备份和迁移。
 
 ```sh
-git clone https://github.com/Pasitearko/pi-personalization.git
-cd pi-personalization
+git clone https://github.com/Pasitearko/pi-skin.git
+cd pi-skin
 pi install npm:alps-pi@0.3.4
 pi install npm:@specode/pi-subscription-usage@1.3.1
 pi install ./linux
@@ -68,6 +71,14 @@ pi install ./linux
 快捷键示例把 **Ctrl+F** 用于 Pi 全屏搜索，向右移动保留方向键。ALPS 快捷键属于 ALPS 的设置，不等于终端全局快捷键。
 
 `config/packages.example.json` 另外记录了本机的 7 个上游插件及版本，**只是按需安装的清单，不会自动安装**：billion-context、imagegen、pi-mcp-adapter、pi-web-access、plannotator、ALPS、subscription-usage。它们各自需要自己的配置和授权。只有选择 pi-mcp-adapter 时才参考 `-builtin:mcp`，避免两个 MCP 实现重复加载；不用适配器时不要禁用内置 MCP。
+
+### 可选：Kitty 输入与 MCP
+
+- 字体片段：`config/kitty-fonts.example.conf`。输入片段：`config/kitty-input.example.conf`，在已有 Kitty include 之后手动合并。后者添加 **Ctrl+左键打开链接**（包括 Pi 捕获鼠标时），保留普通左键供 Pi/选区使用，并把 Ctrl+V 传给 Pi 处理图片粘贴；终端粘贴用 Ctrl+Shift+V。Kitty 默认 Ctrl+Shift+左键仍可用。
+- `config/mcp-github.example.json`：使用 pi-mcp-adapter 时，可将其中的 github 项手动合并进 `~/.config/mcp/mcp.json`。示例用 PATH 中的 `github-mcp-server`，需自行安装/登录；`openUi: false` 取消 MCP App 表单，直接调用工具，**不扩大权限或自动授权操作**。
+- `config/mcp-playwright.example.json`：按需合并进 `~/.pi/agent/mcp.json`，使用独立 Chrome 会话，不附带个人浏览器资料。
+- 两份 MCP 文件只是模板，不要用它们覆盖整份已有配置；不需要对应插件时不要加入。修改后 `/reload`。插件 OAuth 认证按上游流程自行完成。
+- 如需保留 MCP UI，同时使用沉浸式翻译，可阅读 [可选 UI 噪声修复](compat/mcp-ui-filter/README.md)。该补丁独立安装，不是默认外观补丁的一部分。
 
 ### 3. 可选：恢复底部布局等高级修改
 
@@ -119,7 +130,7 @@ Fish 使用 `set -gx PI_COMPLETION_SOUND "$HOME/.local/share/pi/sounds/my-comple
 - 数据来源：[Open-Meteo](https://open-meteo.com/)。请求会把配置的坐标与源 IP 暴露给服务；遵守其[使用条款与署名要求](https://open-meteo.com/en/terms)。天气缓存位于 Pi agent 目录的 `cache/weather-cities-v1.json`，不在本仓库。
 - 可用 `PI_WEATHER_LOCATIONS` 自定义 1–5 个城市，格式见[项目天气说明](../README.md#天气位置)；不要把住所坐标提交到 Git。移除/停用 weather-row 可停止自动请求。
 - 额度查询与 OpenAI 登录由独立的 subscription-usage 上游插件负责，tick-rail/计时组件只接共享行和 UI；不附带认证和实际余额。
-- 不上传 auth/models/MCP 配置及缓存、会话、web-search API 配置、cookies、设备 ID、音频、字体、截图、私有备份、node_modules，也不包含 Niri、蓝牙、PAM、应用配置等非 Pi 桌面设置。
+- 不上传原始 auth/models/MCP 配置及缓存、会话、web-search API 配置、cookies、设备 ID、音频、字体、截图、私有备份、node_modules，也不包含 Niri、蓝牙、PAM、应用配置等非 Pi 桌面设置。MCP 仅提供经过审阅、不含认证/私人路径的 example 模板。
 
 ## 验证
 
@@ -132,8 +143,8 @@ npm run check:privacy
 
 测试仅给本目录 `node_modules` 的开发依赖应用 Linux 补丁，不碰实际 `~/.pi/agent`。覆盖 7 个扩展加载、配置字段白名单、补丁哈希与拒绝未知文件、天气、最终状态音频调度、真实 Pi/ALPS 多行输入复制，以及 CUSTOM 背景与工具框颜色。测试使用假网络/播放器/clipboard，不调用模型、不查询私人额度、不播放声音。
 
-本次 Linux 本地通过：包/配置 4 项、天气 57 项、计时/音频 36 项、干净复制 24 个集成用例、CUSTOM/工具框 960 个渲染组合。自动化不等于跨终端实机验收；其他 Pi 版本不作保证。
+本次 Linux 本地通过：包/配置 6 项、天气 57 项、计时/音频 36 项、干净复制 24 个集成用例、CUSTOM/工具框 960 个渲染组合；另单独验证 MCP UI 噪声过滤 11 项，并在临时目录验证该补丁的 dry-run、应用、重复应用、冲突拒绝与逐字节撤回。可选 MCP UI 测试和隔离安装方法见其 README，不由默认 `npm test` 自动运行。自动化不等于跨终端实机验收；其他 Pi 版本不作保证。
 
-卸载：`pi remove /absolute/path/to/pi-personalization/linux`（以 `pi list` 显示的 source 为准），重启 Pi；如有高级补丁，先用 receipt 撤回。手工合并的设置由你保留或恢复。
+卸载：`pi remove /absolute/path/to/pi-skin/linux`（以 `pi list` 显示的 source 为准），重启 Pi；如有高级补丁，先用 receipt 撤回。手工合并的设置由你保留或恢复。
 
 原创代码遵循仓库 [MIT](../LICENSE)，修改的 ALPS / subscription-usage 保留上游 [许可说明](../THIRD_PARTY_NOTICES.md)。

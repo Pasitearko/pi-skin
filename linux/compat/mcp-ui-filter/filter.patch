@@ -1,0 +1,27 @@
+--- a/host-html-template.ts
++++ b/host-html-template.ts
+@@ -284,6 +284,9 @@
+       // Handle raw UI action messages
+       const msgType = data.type;
+       if (typeof msgType !== "string") return;
++      // Browser extensions also post into the app frame. Their internal bridge
++      // traffic is not an MCP UI action and must not wake the agent.
++      if (msgType.startsWith("immersiveTranslate-messager-frame-bridge#")) return;
+       
+       if (msgType === "notify" || msgType === "prompt" || msgType === "intent" || msgType === "message") {
+         // Standard MCP-UI types - preserve their semantics
+--- a/ui-server.ts
++++ b/ui-server.ts
+@@ -153,6 +153,12 @@
+   };
+ 
+   const recordUiMessage = async (msgParams: UiMessageParams): Promise<void> => {
++    // Defense in depth for stale host pages or extension traffic forwarded as
++    // an intent: drop it before recording it or triggering an agent turn.
++    if ([msgParams.type, msgParams.intent].some((value) =>
++      typeof value === "string" && value.startsWith("immersiveTranslate-messager-frame-bridge#")
++    )) return;
++
+     const promptText = extractUiPromptText(msgParams);
+ 
+     // Track messages by type (order: prompt → intent → notify)

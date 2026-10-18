@@ -1,0 +1,3 @@
+# Vendored MCP sources and patch context retain upstream bytes for SHA-256 checks.
+compat/mcp-ui-filter/patches/pi-mcp-adapter/*.ts -whitespace
+compat/mcp-ui-filter/filter.patch -whitespace

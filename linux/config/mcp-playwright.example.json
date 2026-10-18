@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.83",
+        "--browser",
+        "chrome",
+        "--isolated",
+        "--sandbox",
+        "--no-webmcp"
+      ],
+      "exposure": "codemode",
+      "description": "Playwright browser automation in an isolated Chrome session; navigate, click, fill forms, snapshot and screenshot."
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "github-mcp-server",
+      "args": [
+        "stdio",
+        "--oauth-scopes",
+        "repo,read:org"
+      ],
+      "lifecycle": "lazy",
+      "openUi": false
+    }
+  }
+}
