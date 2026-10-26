@@ -53,9 +53,10 @@
         {
           "path": "src/file-link-click.ts",
           "before": null,
-          "after": "304bee2e8671e82d6c0151a55f06674deb4f95452e2191f8d2e222150bb1ceee",
+          "after": "be638e46e3111e2a3e26fe9d9b5026d55ffe1d13e755dea320310db53ff139a7",
           "payload": "patches/alps-pi/src/file-link-click.ts",
           "previous": [
+            "304bee2e8671e82d6c0151a55f06674deb4f95452e2191f8d2e222150bb1ceee",
             "c94045c9a64b7ad6019419c8d0c7c9c69b0d3ea06c3285e479e7fbf41e0bebf7",
             "acf9decb15190314d092b69b57e4e17655cddd9f03355c4432cb720426f91543"
           ]

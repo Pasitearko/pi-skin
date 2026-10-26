@@ -138,6 +138,32 @@ await test('bare HTTP(S) and safe file URIs still open via Ctrl; ANSI and CJK co
     f.dispose();
   }
 });
+await test('bare URLs preserve balanced delimiters and exclude surrounding prose punctuation', () => {
+  const wikipedia = 'https://en.wikipedia.org/wiki/Function_(mathematics)';
+  for (const [text, expected, column] of [
+    [wikipedia, wikipedia, 1],
+    [`(${wikipedia}).`, wikipedia, 2],
+    ['https://example.com/a_(b_(c))', 'https://example.com/a_(b_(c))', 1],
+    ['[https://example.com/a[b]].', 'https://example.com/a[b]', 2],
+    ['https://[::1]', 'https://[::1]', 1],
+    ['https://example.com/a{b}', 'https://example.com/a{b}', 1],
+    ['https://example.com/函数（示例）', 'https://example.com/函数（示例）', 1],
+    ['https://example.com/【示例】', 'https://example.com/【示例】', 1],
+    ['（https://example.com/a）。', 'https://example.com/a', 3],
+  ]) {
+    const f = fixture(text, true);
+    try {
+      f.event(16, false, column); f.event(16, true, column);
+      assert.deepEqual(f.opened, [expected], text);
+    } finally { f.dispose(); }
+  }
+  const f = fixture(`(${wikipedia}).`, true);
+  try {
+    const punctuationColumn = wikipedia.length + 1;
+    f.event(16, false, punctuationColumn); f.event(16, true, punctuationColumn);
+    assert.deepEqual(f.opened, [], 'surrounding punctuation is not a clickable URL');
+  } finally { f.dispose(); }
+});
 await test('link policy survives footer toggles and starts with both optional visuals disabled', () => {
   const f = fixture(targets[0]);
   f.dispose(); // Runtime, not this fixture, must own the policy.

@@ -116,12 +116,25 @@ function installFileLinkOutputFilter(terminal: Terminal): (() => void) | undefin
 	};
 }
 
+// Strip prose punctuation, but keep balanced URL delimiters (including IPv6).
+function trimPlainUrlPunctuation(target: string): string {
+	const openers: Record<string, string> = { ")": "(", "]": "[", "}": "{", "）": "（", "】": "【" };
+	while (target) {
+		const last = target.slice(-1), opener = openers[last];
+		if (/[.,;:!?，。；：！？]/u.test(last)
+			|| (opener && target.split(last).length > target.split(opener).length)) {
+			target = target.slice(0, -1);
+		} else break;
+	}
+	return target;
+}
+
 // Kitty used to detect bare URIs in tool output. Preserve that convenience when
 // Pi owns Ctrl clicks; never infer arbitrary paths or replace explicit OSC 8.
 function plainUrlAtColumn(line: string, column: number): string | undefined {
 	const text = stripTerminalSequences(line);
 	for (const match of text.matchAll(/(?:https?:\/\/|file:\/\/\/)[^\s<>"'`]+/gi)) {
-		const target = match[0].replace(/[.,;:!?，。；：！？)\]}）】]+$/u, "");
+		const target = trimPlainUrlPunctuation(match[0]);
 		const start = visibleWidth(text.slice(0, match.index));
 		if (column < start || column >= start + visibleWidth(target)) continue;
 		try {
