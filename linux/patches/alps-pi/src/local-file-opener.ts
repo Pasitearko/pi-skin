@@ -7,8 +7,8 @@ import { normalizeLocalFileHyperlink } from "./local-file-hyperlink.ts";
 import { installCtrlFileClickRouting, type CtrlFileClickTarget } from "./file-link-click.ts";
 
 const TARGET_ENV = "PI_LOCAL_FILE_OPEN_TARGET";
-const WRAPPER_KEY = Symbol.for("alps.pi.windowsLocalFileOpener.v3");
-const LEGACY_KEYS = [Symbol.for("alps.pi.windowsLocalFileOpener.v2"), Symbol.for("alps.pi.windowsLocalFileOpener.v1")];
+const WRAPPER_KEY = Symbol.for("alps.pi.ctrlClickLinkOpener.v4");
+const LEGACY_KEYS = [Symbol.for("alps.pi.windowsLocalFileOpener.v3"), Symbol.for("alps.pi.windowsLocalFileOpener.v2"), Symbol.for("alps.pi.windowsLocalFileOpener.v1")];
 const DEBUG_FLAG = resolve(dirname(fileURLToPath(import.meta.url)), "../.temp/local-file-open-debug.enabled");
 const DEBUG_LOG = join(homedir(), ".pi", "agent", "patches", "alps-hyperlinks", "unicode-opener-debug.jsonl");
 // Constant script: the target is DATA in a Unicode environment variable, never
@@ -43,7 +43,7 @@ export function isLocalFileOpenDebugEnabled(): boolean {
 function trace(stage: string, details: Record<string, boolean | number | string | null> = {}): void {
 	if (!isLocalFileOpenDebugEnabled()) return;
 	try {
-		appendFileSync(DEBUG_LOG, `${JSON.stringify({ time: new Date().toISOString(), pid: process.pid, version: 3, stage, ...details })}\n`, "utf8");
+		appendFileSync(DEBUG_LOG, `${JSON.stringify({ time: new Date().toISOString(), pid: process.pid, version: 4, stage, ...details })}\n`, "utf8");
 	} catch { /* Diagnostic failures must not affect the UI or activation. */ }
 }
 
@@ -98,14 +98,13 @@ export function planWindowsLocalFileOpen(target: string): WindowsFileOpenPlan {
 	};
 }
 
-/** Own the real fullscreen callback, not its changing stable-reference facade. */
-export function installWindowsLocalFileOpener(
+/** Ctrl-only links on every platform; Windows additionally needs a Unicode file opener. */
+export function installCtrlClickLinkOpener(
 	reference: ClickTarget,
 	reportError: ReportError = () => undefined,
 	launch: typeof spawn = spawn,
 	reportActivity: ReportActivity = () => undefined,
 ): () => void {
-	if (process.platform !== "win32") { trace("install_skipped", { reason: "not_windows" }); return () => undefined; }
 	let tui: ClickTarget | undefined;
 	try {
 		if (reference?.mode !== "fullscreen" || typeof reference.openUrl !== "function") {
@@ -131,7 +130,7 @@ export function installWindowsLocalFileOpener(
 	let metadata = (current as OpenUrl & { [WRAPPER_KEY]?: WrapperMetadata })[WRAPPER_KEY];
 	if (!metadata) {
 		const fileRouting = installCtrlFileClickRouting(tui);
-		if (typeof tui.handleSelectionMouseEvent === "function" && !fileRouting) {
+		if (!fileRouting) {
 			trace("install_skipped", { reason: "no_ctrl_file_routing" });
 			return () => undefined;
 		}
@@ -141,11 +140,13 @@ export function installWindowsLocalFileOpener(
 		const wrapper: OpenUrl = target => {
 			const localFile = /^file:/i.test(target);
 			trace("callback", { localFile });
-			if (localFile && fileRouting && !fileRouting.allowsFileOpen()) {
-				trace("plain_file_click_ignored");
+			if (!fileRouting.allowsLinkOpen()) {
+				trace("non_ctrl_click_ignored");
 				return;
 			}
 			try {
+				// Linux/macOS keep Pi's existing URL/file opener. Do not run PowerShell there.
+				if (process.platform !== "win32") { current.call(tui, target); return; }
 				const plan = planWindowsLocalFileOpen(target);
 				trace("plan", { kind: plan.kind });
 				if (plan.kind === "delegate") { current.call(tui, plan.target); return; }

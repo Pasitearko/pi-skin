@@ -19,6 +19,7 @@ try {
   delete env.PI_COMPLETION_SOUND;
   for (const file of [
     'tests/package.mjs',
+    'tests/link-click.mjs',
     'extensions/weather-row/tests/run.mjs',
     'extensions/working-timer/tests/run.mjs',
     'extensions/clean-frame-copy/tests/run.mjs',

@@ -2,7 +2,9 @@
 
 快照核对日期：2026-10-18。环境：CachyOS Linux、Kitty、Pi 1.3.0。
 
-本次整理只写入 `linux/`，保留 Windows / 原基础包的所有代码、补丁、配置、截图、说明及 npm 包名。GitHub 仓库更名为 `Pasitearko/pi-skin`；npm 的 `@jiuliyear/pi-personalization` 不会因此改名或重新发布。
+2026-10-18 的整理只写入 `linux/`，保留了 Windows / 原基础包的所有代码、补丁、配置、截图、说明及当时的 npm 包名。GitHub 仓库更名为 `Pasitearko/pi-skin` 时，并未发布新的 npm 包。
+
+后续包名同步：根目录发布清单现使用 `@jiuliyear/pi-skin`，代替旧包 `@jiuliyear/pi-personalization`；需要单独发布到 npm 才会出现在 pi.dev，新包发布前可使用 Git 安装。Linux 仍作为独立本地配置包，不在此次 npm 包名迁移中改动。
 
 ## 已收录
 

@@ -121,9 +121,11 @@ ALPS 隐藏 elapsedTime，独立 working-timer 负责本轮耗时；cost 为估�
 | 上一条 / 下一条用户消息 | `Ctrl+Shift+U` / `Ctrl+Shift+I`；ALPS |
 | 上一条 / 下一条 Assistant 消息 | `Ctrl+Alt+,` / `Ctrl+Alt+.`；ALPS |
 | 对话底部 | `Ctrl+Shift+G`；ALPS |
-| 打开链接 | `Ctrl+左键`；Kitty 片段；默认 `Ctrl+Shift+左键` 仍可用 |
+| 打开网页 / 本地文件链接 | **仅 `Ctrl+左键`**；ALPS 全屏补丁 + Kitty 片段；普通左键、`Shift` / `Ctrl+Shift` 不打开 |
 | 图片粘贴给 Pi | `Ctrl+V`；Kitty `no_op` 将按键传给 Pi |
 | 终端粘贴 / 复制 | `Ctrl+Shift+V` / `Ctrl+Shift+C`；Kitty |
+
+链接规则需两层一起更新：全屏 Pi 始终检查 Ctrl 点击；直接运行于 Kitty 时保留 OSC 8 标记，提供悬停下划线、手形及按住 Ctrl 时的目标地址预览。Kitty 片段禁止普通左键和其他修饰键组合打开，在鼠标被 Pi 接管时将 Ctrl 点击传给 Pi，未被接管时才自行处理。悬停提示不授予普通左键打开权限；Kitty 原生下划线和手形不限定 Ctrl，目标地址预览才限定 Ctrl。其他终端或复用器内仍屏蔽终端 OSC 8，保留 Pi 内部命中。普通点击和拖动选字保留；门禁属于会话，不随可选 footer/editor 的隐藏而失效。必须合并 Kitty 片段，单独更新任意一层不能保证统一规则。安装后重启 Pi、重新加载 Kitty 配置；不修改浏览器或桌面其他应用的点击规则。
 
 终端、窗口管理器可能先截获按键；此包不更改系统快捷键。
 

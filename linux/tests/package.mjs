@@ -47,9 +47,12 @@ await test('optional MCP and Kitty templates do not import personal configuratio
   const playwright = read('config/mcp-playwright.example.json').mcpServers.playwright;
   for (const flag of ['--isolated', '--sandbox', '--no-webmcp']) assert.ok(playwright.args.includes(flag));
   const kitty = fs.readFileSync(path.join(root, 'config/kitty-input.example.conf'), 'utf8');
-  assert.match(kitty, /mouse_map ctrl\+left release grabbed,ungrabbed mouse_handle_click link/);
+  assert.match(kitty, /mouse_map ctrl\+left release ungrabbed mouse_handle_click link/);
+  assert.match(kitty, /mouse_map ctrl\+left release grabbed no_op/);
+  assert.match(kitty, /mouse_map ctrl\+shift\+left release grabbed,ungrabbed no_op/);
   assert.match(kitty, /map ctrl\+v no_op/);
-  assert.doesNotMatch(kitty, /^mouse_map left /m);
+  assert.match(kitty, /^mouse_map left click ungrabbed mouse_handle_click selection prompt$/m);
+  assert.doesNotMatch(kitty, /^mouse_map (?:left|shift\+left).*\blink\b/m);
 });
 await test('optional MCP UI patch has independent pinned payloads and version/hash guards', () => {
   const payloadRoot = path.join(root, 'compat/mcp-ui-filter');

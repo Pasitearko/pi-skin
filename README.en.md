@@ -2,7 +2,7 @@
 
 **Pi terminal UI customization: frames, clean copying, weather, timers, quota and mouse interactions.**
 
-[中文](README.md) · [Linux configuration](linux/README.en.md) · [Original npm package](https://www.npmjs.com/package/@jiuliyear/pi-personalization) · [MIT](LICENSE)
+[中文](README.md) · [Linux configuration](linux/README.en.md) · [npm](https://www.npmjs.com/package/@jiuliyear/pi-skin) · [Pi package gallery](https://pi.dev/packages/@jiuliyear/pi-skin) · [MIT](LICENSE)
 
 ## Preview
 
@@ -33,7 +33,9 @@ Original terminal capture published with the author's permission. Other previews
 | Highlights | 7 components, colored weather icons, green/red tool frames, PipeWire audio | 8 components, Fast toggle, `no-tool-bg` theme, Windows audio |
 | Reference | [English](linux/README.en.md) / [中文](linux/README.md) | [Features below](#features-and-commands) |
 
-**Do not load both profiles.** The repository is `pi-skin`; the original npm package remains `@jiuliyear/pi-personalization`.
+**Do not load both profiles.** The repository is `pi-skin`; the npm package name is now `@jiuliyear/pi-skin`.
+
+> **Package migration:** `@jiuliyear/pi-personalization` is the old npm package; renaming GitHub does not migrate it automatically. Use the Git installation below until the new package is first published. After publication, pi.dev can discover it through the npm `pi-package` keyword; indexing may be delayed. Existing npm users should run `pi remove npm:@jiuliyear/pi-personalization` first, then install either the new npm package or the Git source, not both.
 
 ## Install
 
@@ -54,14 +56,14 @@ Merge the [Linux settings](linux/README.en.md#configuration); explicitly apply t
 Node **22.19.0+**; Pi **1.2.0** recommended. Mouse enhancements require fullscreen and SGR mouse support.
 
 ```sh
-# Published npm version
-pi install npm:@jiuliyear/pi-personalization
+# New npm package (available after its first publication)
+pi install npm:@jiuliyear/pi-skin
 
 # OR latest Git source; do not install alongside the npm version
 pi install git:github.com/Pasitearko/pi-skin
 ```
 
-Restart or `/reload`; optionally select `no-tool-bg` in Pi settings. Base installation does not patch ALPS or replace your settings. The latest multiline input-selection fix is in Git, not yet published to npm.
+Restart or `/reload`; optionally select `no-tool-bg` in Pi settings. Base installation does not patch ALPS or replace your settings. The old npm package `@jiuliyear/pi-personalization@0.1.1` lacks the latest multiline input-selection fix; use Git until the new package is published.
 
 ## Features and commands
 
@@ -148,6 +150,6 @@ npm test
 npm run check:privacy
 ```
 
-Uninstall Linux with `pi remove <local source shown by pi list>`. For the original package, use `pi remove npm:@jiuliyear/pi-personalization` or `pi remove git:github.com/Pasitearko/pi-skin`, matching the installed source. If installed via the old address, follow `pi list`. Undo advanced patches before removing extensions.
+Uninstall Linux with `pi remove <local source shown by pi list>`. For the original package, use `pi remove npm:@jiuliyear/pi-skin` or `pi remove git:github.com/Pasitearko/pi-skin`, matching the installed source. If installed via the old address, follow `pi list`. Undo advanced patches before removing extensions.
 
 [Security](SECURITY.md) · [Linux inventory](linux/INVENTORY.md) · [Skills / MCP recommendations](docs/RECOMMENDATIONS.md) · [Third-party licenses](THIRD_PARTY_NOTICES.md)

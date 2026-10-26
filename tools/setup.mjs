@@ -34,7 +34,9 @@ export function patchPlan(modules,root=projectRoot) {
    const data=fs.readFileSync(payload);if(digest(data)!==file.after)throw Error('Patch payload checksum mismatch');
    const current=fs.existsSync(target)?fs.readFileSync(target):null,oldHash=current?digest(current):null;
    if(oldHash===file.after)continue;
-   if(oldHash!==file.before)throw Error('Existing file differs from pristine/our patch; refusing overwrite: '+file.path);
+   const previous=file.previous??[];
+   if(!Array.isArray(previous)||previous.some(hash=>typeof hash!=='string'||! /^[a-f0-9]{64}$/.test(hash)))throw Error('Invalid previous patch checksum');
+   if(oldHash!==file.before&&!previous.includes(oldHash))throw Error('Existing file differs from pristine/our patch; refusing overwrite: '+file.path);
    actions.push({target,payload,data,before:oldHash,after:file.after,original:current});
   }
  }

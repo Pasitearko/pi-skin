@@ -20,8 +20,11 @@
         {
           "path": "src/features/bottom-input/runtime.ts",
           "before": "418132f5fa222939b167d5823e7cbfad34febd486ce7208580d01c52f65047ad",
-          "after": "dcd99e64e06ca93f8f4dbfdbe8947988b3b8e4ef76d1dcbe8a53c5c39273e5b3",
-          "payload": "patches/alps-pi/src/features/bottom-input/runtime.ts"
+          "after": "623ac1855571120b47416ddf200cd52d49f3390e99df2a14fffd20eda9f8f5a6",
+          "payload": "patches/alps-pi/src/features/bottom-input/runtime.ts",
+          "previous": [
+            "dcd99e64e06ca93f8f4dbfdbe8947988b3b8e4ef76d1dcbe8a53c5c39273e5b3"
+          ]
         },
         {
           "path": "src/features/bottom-input/status.ts",
@@ -50,8 +53,12 @@
         {
           "path": "src/file-link-click.ts",
           "before": null,
-          "after": "c94045c9a64b7ad6019419c8d0c7c9c69b0d3ea06c3285e479e7fbf41e0bebf7",
-          "payload": "patches/alps-pi/src/file-link-click.ts"
+          "after": "304bee2e8671e82d6c0151a55f06674deb4f95452e2191f8d2e222150bb1ceee",
+          "payload": "patches/alps-pi/src/file-link-click.ts",
+          "previous": [
+            "c94045c9a64b7ad6019419c8d0c7c9c69b0d3ea06c3285e479e7fbf41e0bebf7",
+            "acf9decb15190314d092b69b57e4e17655cddd9f03355c4432cb720426f91543"
+          ]
         },
         {
           "path": "src/local-file-hyperlink.ts",
@@ -62,8 +69,11 @@
         {
           "path": "src/local-file-opener.ts",
           "before": null,
-          "after": "dc47439a6ce3287bf202a404ae8ba4463db742dc3d6d533a23db9e738dab38d4",
-          "payload": "patches/alps-pi/src/local-file-opener.ts"
+          "after": "2ae0b4ad1b82f486c63f97827b1e7cd343779caea311b443dc7f6edba47e5f43",
+          "payload": "patches/alps-pi/src/local-file-opener.ts",
+          "previous": [
+            "dc47439a6ce3287bf202a404ae8ba4463db742dc3d6d533a23db9e738dab38d4"
+          ]
         },
         {
           "path": "src/settings-ui.ts",

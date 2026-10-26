@@ -26,8 +26,8 @@ import { readStoredThroughput, writeStoredThroughput } from "./throughput-store.
 import { getBottomInputIcons } from "./icons.ts";
 import { cloneDefaultInputMetricsSettings, normalizeInputMetricsSettings, type InputMetricsSettings } from "./metrics.ts";
 import { formatPiCapabilityFailures, inspectPiRuntimeCapabilities } from "../../pi-compat.ts";
-// [local patch] Restore Unicode local-file opening without replacing Pi core.
-import { installWindowsLocalFileOpener } from "../../local-file-opener.ts";
+// [local patch] Session-scoped Ctrl-only links, independent of optional footer/editor.
+import { installCtrlClickLinkOpener } from "../../local-file-opener.ts";
 
 export type BottomInputRuntimeStatus = {
 	enabled: boolean;
@@ -70,6 +70,7 @@ type RuntimeUI = {
 	getEditorComponent?: () => unknown;
 	setFooter?: (factory: ((tui: any, theme: any, footerData: any) => any) | undefined) => void;
 	setStatus?: (key: string, value: string | undefined) => void;
+	setWidget?: (key: string, factory: ((tui: any) => any) | undefined) => void;
 	getEditorText?: () => string;
 	setEditorText?: (text: string) => void;
 	notify?: (message: string, level: "info" | "warning" | "error") => void;
@@ -146,6 +147,9 @@ class BottomInputRuntimeImpl implements BottomInputRuntime {
 	private sessionStartTime: number;
 	private shortcuts: BottomInputShortcuts;
 	private lastTuiFailure: string | undefined;
+	private linkPolicyTui: any;
+	private restoreLinkPolicy: (() => void) | undefined;
+	private linkWidgetUi: RuntimeUI | undefined;
 
 	constructor(options: BottomInputRuntimeOptions) {
 		this.now = options.now ?? (() => Date.now());
@@ -175,9 +179,18 @@ class BottomInputRuntimeImpl implements BottomInputRuntime {
 			this.generation += 1;
 			this.stopRenderTimer();
 		}
+		if (previousUi && previousUi !== next.ui) this.releaseLinkPolicy();
 		this.ctx = ctx;
 		this.ui = next.ui;
 		this.failure = undefined;
+		// An empty widget obtains the TUI even when both optional visuals are off.
+		if (next.ui.setWidget && this.linkWidgetUi !== next.ui) {
+			this.linkWidgetUi = next.ui;
+			next.ui.setWidget("alps-ctrl-click-policy", tui => {
+				this.ensureLinkPolicy(tui);
+				return { render: () => [], invalidate: () => undefined };
+			});
+		}
 		// [local patch] 新进程（含 /reload 与重启）启动时从状态文件恢复常驻吞吐率。
 		if (this.tokensPerSecond === null) {
 			const restored = readStoredThroughput();
@@ -197,6 +210,7 @@ class BottomInputRuntimeImpl implements BottomInputRuntime {
 
 	dispose(): void {
 		this.generation += 1;
+		this.releaseLinkPolicy();
 		this.disable();
 		this.ctx = undefined;
 		this.ui = undefined;
@@ -502,11 +516,31 @@ class BottomInputRuntimeImpl implements BottomInputRuntime {
 		if (typeof ui.setFooter !== "function") throw new Error("bottom input expected ctx.ui.setFooter(factory)");
 	}
 
+	private ensureLinkPolicy(tui: any): void {
+		if (this.linkPolicyTui === tui) return;
+		this.restoreLinkPolicy?.();
+		this.linkPolicyTui = tui;
+		this.restoreLinkPolicy = installCtrlClickLinkOpener(tui,
+			message => this.ui?.notify?.(message, "error"), undefined,
+			event => this.ui?.notify?.(event === "ready"
+				? "链接诊断已接入（v4）；网页和本地文件均仅 Ctrl＋左键打开。"
+				: "已收到中文文件链接点击，正在请求 Windows 打开。", "info"));
+	}
+
+	private releaseLinkPolicy(): void {
+		this.restoreLinkPolicy?.();
+		this.restoreLinkPolicy = undefined;
+		this.linkPolicyTui = undefined;
+		try { this.linkWidgetUi?.setWidget?.("alps-ctrl-click-policy", undefined); } catch { /* Stale session. */ }
+		this.linkWidgetUi = undefined;
+	}
+
 	private createEditorFactory(ownerGeneration: number): (tui: any, theme: any, keybindings: any) => any {
 		return (tui, theme, keybindings) => {
 			if (ownerGeneration !== this.generation || ownerGeneration !== this.editorOwnerGeneration) return createStaleEditorFallback();
 			if (!this.diagnoseTui(tui)) throw new Error("unsupported Pi TUI renderer mode");
 			this.tui = tui;
+			this.ensureLinkPolicy(tui);
 			this.editorTheme = theme ?? FALLBACK_EDITOR_THEME;
 			const owner = this;
 			const editor = createBottomInputEditor(tui, this.editorTheme, keybindings, {
@@ -528,14 +562,7 @@ class BottomInputRuntimeImpl implements BottomInputRuntime {
 			this.theme = theme ?? FALLBACK_EDITOR_THEME;
 			this.footerData = footerData;
 			let active = true;
-			const restoreLocalFileOpener = installWindowsLocalFileOpener(tui, message => {
-				if (active && generation === this.generation) this.ui?.notify?.(message, "error");
-			}, undefined, event => {
-				if (!active || generation !== this.generation) return;
-				this.ui?.notify?.(event === "ready"
-					? "文件链接诊断已接入（v3）；本地文件仅 Ctrl＋左键打开。"
-					: "已收到中文文件链接点击，正在请求 Windows 打开。", "info");
-			});
+			this.ensureLinkPolicy(tui);
 			const unsubscribeBranch = footerData?.onBranchChange?.(() => {
 				if (generation !== this.generation) return;
 				this.resetLayoutCache();
@@ -547,7 +574,6 @@ class BottomInputRuntimeImpl implements BottomInputRuntime {
 				dispose: () => {
 					if (!active) return;
 					active = false;
-					restoreLocalFileOpener();
 					unsubscribeBranch?.();
 				},
 				invalidate: () => generation === this.generation && this.requestRender(),

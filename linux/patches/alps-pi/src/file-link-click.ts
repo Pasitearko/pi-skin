@@ -1,10 +1,13 @@
-// Keep file links in the rendered screen for hit testing, but not in terminal
-// output where Windows Terminal consumes Ctrl-click.
-// HTTP(S), text, colours, images and all non-file controls remain unchanged.
+// Fullscreen Pi owns every link click. Kitty, configured with our Ctrl-only
+// mouse mappings, may also see OSC 8 links for native hover feedback. Elsewhere
+// keep link hit data internal to avoid a second terminal activation path.
+import { stripTerminalSequences, visibleWidth } from "@earendil-works/pi-tui";
+import { normalizeLocalFileHyperlink } from "./local-file-hyperlink.ts";
+
 const OSC8 = "\x1b]8;";
 const CLOSE = "\x1b]8;;\x1b\\";
 const MAX_PENDING = 16384;
-const WRITE_KEY = Symbol.for("alps.pi.ctrlFileLinkWriter.v1");
+const WRITE_KEY = Symbol.for("alps.pi.ctrlLinkWriter.v2");
 
 type Write = (data: string) => void;
 type Terminal = { write: Write };
@@ -14,11 +17,21 @@ export type CtrlFileClickTarget = {
 	terminal?: Terminal;
 	handleSelectionMouseEvent?: MouseHandler;
 	requestRender?: (force?: boolean) => void;
+	previousScreen?: string[];
+	pressedUrl?: string;
+	selectionPressActive?: boolean;
+	selectionInitialRange?: unknown;
 };
 type Filter = { filter(data: string): string; flush(): string };
 type WriteMetadata = { owners: Set<symbol>; original: Write; wrapper: Write; filter: Filter; descriptor?: PropertyDescriptor };
 
-/** Bounded streaming filter; file opens become link closes, never plain URI text. */
+/** Native hover needs Kitty's Ctrl-only input fragment; other terminals stay filtered. */
+export function supportsNativeLinkHover(env: Record<string, string | undefined> = process.env): boolean {
+	return env.TERM === "xterm-kitty" && /^\d+$/.test(env.KITTY_WINDOW_ID ?? "")
+		&& env.TMUX === undefined && env.ZELLIJ === undefined && env.STY === undefined;
+}
+
+/** Bounded streaming fallback; link opens become closes, never plain URI text. */
 export function createFileLinkOutputFilter(): Filter {
 	let pending = "", discarding = false;
 	return {
@@ -56,9 +69,7 @@ export function createFileLinkOutputFilter(): Filter {
 					break;
 				}
 				const length = end + (end === bel ? 1 : 2);
-				const body = input.slice(OSC8.length, end), separator = body.indexOf(";");
-				const target = separator < 0 ? "" : body.slice(separator + 1);
-				output += /^file:/i.test(target) ? CLOSE : input.slice(0, length);
+				output += CLOSE;
 				input = input.slice(length);
 			}
 			return output;
@@ -105,35 +116,64 @@ function installFileLinkOutputFilter(terminal: Terminal): (() => void) | undefin
 	};
 }
 
+// Kitty used to detect bare URIs in tool output. Preserve that convenience when
+// Pi owns Ctrl clicks; never infer arbitrary paths or replace explicit OSC 8.
+function plainUrlAtColumn(line: string, column: number): string | undefined {
+	const text = stripTerminalSequences(line);
+	for (const match of text.matchAll(/(?:https?:\/\/|file:\/\/\/)[^\s<>"'`]+/gi)) {
+		const target = match[0].replace(/[.,;:!?，。；：！？)\]}）】]+$/u, "");
+		const start = visibleWidth(text.slice(0, match.index));
+		if (column < start || column >= start + visibleWidth(target)) continue;
+		try {
+			const url = new URL(target);
+			if (/^https?:$/.test(url.protocol) && url.hostname) return target;
+			if (url.protocol === "file:") return normalizeLocalFileHyperlink(target);
+		} catch { /* Invalid text is not a link. */ }
+	}
+	return undefined;
+}
+
 /** Scope permission to a Ctrl-left release; ordinary clicks and drags cannot launch. */
 export function installCtrlFileClickRouting(tui: CtrlFileClickTarget): {
-	allowsFileOpen(): boolean;
+	allowsLinkOpen(): boolean;
 	dispose(): void;
 } | undefined {
 	if (typeof tui.handleSelectionMouseEvent !== "function" || typeof tui.terminal?.write !== "function") return undefined;
 	const original = tui.handleSelectionMouseEvent;
 	const descriptor = Object.getOwnPropertyDescriptor(tui, "handleSelectionMouseEvent");
-	const releaseWriter = installFileLinkOutputFilter(tui.terminal);
+	// The paired Kitty fragment blocks all non-Ctrl opening actions, including
+	// grabbed clicks. Keeping OSC 8 here enables underline, hand and URL preview
+	// without changing the independent Pi opener gate below.
+	const releaseWriter = supportsNativeLinkHover() ? () => undefined : installFileLinkOutputFilter(tui.terminal);
 	if (!releaseWriter) return undefined;
 	let ctrlPressed = false, inCtrlRelease = false;
 	const wrapper: MouseHandler = function (event) {
 		const left = (event.button & 3) === 0;
-		if (!event.release && (event.button & (32 | 64)) === 0) ctrlPressed = left && (event.button & 16) !== 0;
+		const ctrlOnly = (event.button & (4 | 8 | 16)) === 16;
+		const motionOrWheel = (event.button & (32 | 64 | 128)) !== 0;
+		if (motionOrWheel) ctrlPressed = false;
+		else if (!event.release) ctrlPressed = left && ctrlOnly;
 		const previous = inCtrlRelease;
-		inCtrlRelease = event.release && ctrlPressed;
-		try { return original.call(tui, event); }
-		finally {
+		inCtrlRelease = event.release && ctrlPressed && ctrlOnly && !motionOrWheel
+			&& (left || (event.button & 3) === 3);
+		try {
+			const result = original.call(tui, event);
+			if (!event.release && ctrlPressed && !tui.pressedUrl && tui.selectionPressActive && !tui.selectionInitialRange) {
+				tui.pressedUrl = plainUrlAtColumn(tui.previousScreen?.[event.y] ?? "", event.x);
+			}
+			return result;
+		} finally {
 			inCtrlRelease = previous;
 			if (event.release) ctrlPressed = false;
 		}
 	};
 	try { tui.handleSelectionMouseEvent = wrapper; } catch { releaseWriter(); return undefined; }
 	if (tui.handleSelectionMouseEvent !== wrapper) { releaseWriter(); return undefined; }
-	// Re-emit an unchanged screen through the filter, removing already published
-	// terminal file hyperlinks as well as future ones. Internal hit data stays intact.
+	// Re-emit an unchanged screen: restore Kitty hover targets or remove terminal
+	// links in the filtered fallback. Internal hit data stays intact in both modes.
 	let active = true;
 	const routing = {
-		allowsFileOpen: () => inCtrlRelease,
+		allowsLinkOpen: () => inCtrlRelease,
 		dispose() {
 			if (!active) return;
 			active = false;

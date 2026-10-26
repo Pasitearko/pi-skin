@@ -121,9 +121,11 @@ ALPS elapsedTime is hidden; working-timer provides round timing. Cost is an esti
 | Previous / next user message | `Ctrl+Shift+U` / `Ctrl+Shift+I`; ALPS |
 | Previous / next assistant message | `Ctrl+Alt+,` / `Ctrl+Alt+.`; ALPS |
 | Bottom of chat | `Ctrl+Shift+G`; ALPS |
-| Open link | `Ctrl+left-click`; Kitty fragment; default `Ctrl+Shift+left-click` still works |
+| Open web / local file link | **Only `Ctrl+left-click`**; ALPS fullscreen patch + Kitty fragment; plain, `Shift` / `Ctrl+Shift` clicks do not open |
 | Paste image into Pi | `Ctrl+V`; Kitty `no_op` passes the key through |
 | Terminal paste / copy | `Ctrl+Shift+V` / `Ctrl+Shift+C`; Kitty |
+
+Update both layers: fullscreen Pi always gates opening on Ctrl-click. In direct Kitty it preserves OSC 8 for native hover underlines, a hand pointer, and Ctrl-held target previews. The Kitty fragment blocks ordinary and other modified opening clicks, passes grabbed Ctrl clicks to Pi, and handles them itself only when ungrabbed. Hover feedback does not enable plain-click opening: Kitty's underline and hand are not Ctrl-gated; the target preview is. Other terminals and multiplexers still have terminal OSC 8 filtered while Pi retains its internal hit data. Plain clicking and drag selection remain available. Merge the Kitty fragment: updating either layer alone cannot guarantee the unified rule. The guard is session-scoped, independent of optional footer/editor visibility. Restart Pi and reload Kitty after installation; browser and other desktop applications are not modified.
 
 Your terminal or window manager may intercept keys first. This package does not change system shortcuts.
 

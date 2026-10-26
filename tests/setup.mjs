@@ -19,6 +19,19 @@ test('preflight is read-only; apply, idempotency and undo preserve bytes',t=>{
  const undo=path.join(f.root,'undo');applyPatchPlan(actions,f.modules,undo);assert.deepEqual(fs.readFileSync(f.target),f.after);assert.equal(patchPlan(f.modules,f.repo).length,0);
  undoPatches(f.modules,path.join(undo,'patch-undo.json'));assert.deepEqual(fs.readFileSync(f.target),f.before);
 });
+test('reviewed previous patch hashes can upgrade and undo without accepting arbitrary edits',t=>{
+ const f=fixture(t),previous=Buffer.from('export const value=0;\n');
+ fs.writeFileSync(f.target,previous);
+ assert.throws(()=>patchPlan(f.modules,f.repo),/refusing overwrite/);
+ f.manifest.packages[0].files[0].previous=[digest(previous)];f.save();
+ const actions=patchPlan(f.modules,f.repo);assert.equal(actions.length,1);
+ const undo=path.join(f.root,'upgrade-undo');applyPatchPlan(actions,f.modules,undo);
+ assert.deepEqual(fs.readFileSync(f.target),f.after);
+ undoPatches(f.modules,path.join(undo,'patch-undo.json'));assert.deepEqual(fs.readFileSync(f.target),previous);
+ fs.writeFileSync(f.target,'another local edit');assert.throws(()=>patchPlan(f.modules,f.repo),/refusing overwrite/);
+ f.manifest.packages[0].files[0].previous=['not a checksum'];f.save();
+ assert.throws(()=>patchPlan(f.modules,f.repo),/Invalid previous/);
+});
 test('unknown package version fails before writes',t=>{const f=fixture(t);fs.writeFileSync(path.join(f.modules,'alps-pi/package.json'),JSON.stringify({name:'alps-pi',version:'99.0.0'}));assert.throws(()=>patchPlan(f.modules,f.repo),/Version mismatch/);assert.deepEqual(fs.readFileSync(f.target),f.before);});
 test('existing local modification and new unexpected file are refused',t=>{const f=fixture(t);fs.writeFileSync(f.target,'local edit');assert.throws(()=>patchPlan(f.modules,f.repo),/refusing overwrite/);f.manifest.packages[0].files[0].before=null;f.save();assert.throws(()=>patchPlan(f.modules,f.repo),/refusing overwrite/);});
 test('new files are created and deleted safely by undo',t=>{const f=fixture(t);fs.unlinkSync(f.target);f.manifest.packages[0].files[0].before=null;f.save();const undo=path.join(f.root,'undo');applyPatchPlan(patchPlan(f.modules,f.repo),f.modules,undo);undoPatches(f.modules,path.join(undo,'patch-undo.json'));assert.equal(fs.existsSync(f.target),false);});

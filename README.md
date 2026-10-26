@@ -2,7 +2,7 @@
 
 **Pi 终端界面定制：消息框、干净复制、天气、计时、额度与鼠标交互。**
 
-[English](README.en.md) · [Linux 配置](linux/README.md) · [npm 原基础包](https://www.npmjs.com/package/@jiuliyear/pi-personalization) · [MIT](LICENSE)
+[English](README.en.md) · [Linux 配置](linux/README.md) · [npm](https://www.npmjs.com/package/@jiuliyear/pi-skin) · [Pi 包目录](https://pi.dev/packages/@jiuliyear/pi-skin) · [MIT](LICENSE)
 
 ## 界面预览
 
@@ -33,7 +33,9 @@
 | 特点 | 7 个组件、彩色天气图标、绿/红工具框、PipeWire 提示音 | 8 个组件、Fast 开关、`no-tool-bg` 主题、Windows 提示音 |
 | 详细参数 | [中文](linux/README.md) / [English](linux/README.en.md) | [下方功能与配置](#功能与命令) |
 
-**两套包不要同时加载。** GitHub 名称为 `pi-skin`；原 npm 包名仍是 `@jiuliyear/pi-personalization`。
+**两套包不要同时加载。** GitHub 名称为 `pi-skin`；npm 包名统一为 `@jiuliyear/pi-skin`。
+
+> **包名迁移：** `@jiuliyear/pi-personalization` 是旧 npm 包，不会随 GitHub 改名而自动迁移。新包首次发布前请使用下方 Git 安装方式；发布后 pi.dev 会根据 npm 的 `pi-package` 关键词索引新包，可能有延迟。旧包用户应先执行 `pi remove npm:@jiuliyear/pi-personalization`，再选择新 npm 包或 Git 来源安装，不要同时加载。
 
 ## 安装
 
@@ -56,14 +58,14 @@ pi install ./linux
 Node **22.19.0+**；推荐 Pi **1.2.0**。鼠标增强需要 fullscreen 和 SGR mouse 支持。
 
 ```sh
-# npm 发布版
-pi install npm:@jiuliyear/pi-personalization
+# npm 新包（首次发布后可用）
+pi install npm:@jiuliyear/pi-skin
 
 # 或使用最新 Git 源码，不要与 npm 版同时安装
 pi install git:github.com/Pasitearko/pi-skin
 ```
 
-重启或 `/reload`，可在 Pi 设置中选择 `no-tool-bg`。基础安装不改写 ALPS 或整份配置。最新多行输入去框修复在 Git 源码中，尚未发布到 npm。
+重启或 `/reload`，可在 Pi 设置中选择 `no-tool-bg`。基础安装不改写 ALPS 或整份配置。旧 npm 包 `@jiuliyear/pi-personalization@0.1.1` 不含最新多行输入去框修复；新包发布前请使用 Git 源码。
 
 ## 功能与命令
 
@@ -150,6 +152,6 @@ npm test
 npm run check:privacy
 ```
 
-卸载：Linux 用 `pi remove <pi list 中的本地 source>`；原基础包按实际来源用 `pi remove npm:@jiuliyear/pi-personalization` 或 `pi remove git:github.com/Pasitearko/pi-skin`。旧地址安装的 source 以 `pi list` 为准。先撤回高级补丁，再移除扩展。
+卸载：Linux 用 `pi remove <pi list 中的本地 source>`；原基础包按实际来源用 `pi remove npm:@jiuliyear/pi-skin` 或 `pi remove git:github.com/Pasitearko/pi-skin`。旧地址安装的 source 以 `pi list` 为准。先撤回高级补丁，再移除扩展。
 
 [安全说明](SECURITY.md) · [Linux 收录清单](linux/INVENTORY.md) · [Skills / MCP 推荐](docs/RECOMMENDATIONS.md) · [第三方许可](THIRD_PARTY_NOTICES.md)
