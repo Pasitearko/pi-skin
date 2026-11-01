@@ -2,7 +2,7 @@ import { CustomMessageComponent, InteractiveMode, Theme, VERSION, type Extension
 
 // Adapt the installed ALPS renderer without editing Pi, npm packages or the theme.
 // Support only this Pi release: private rendering APIs require regression testing.
-const VERIFIED_PI_VERSION = "1.3.0";
+const VERIFIED_PI_VERSION = "1.4.0";
 const ALPS_STATE = Symbol.for("alps.pi.patch.v1");
 const OWNER = Symbol.for("pi.tool-status-style.owner.v1");
 const TOOL_BACKGROUNDS = new Set(["toolPendingBg", "toolSuccessBg", "toolErrorBg"]);
@@ -137,11 +137,15 @@ export default function toolStatusStyle(pi: ExtensionAPI) {
       if (box.bgFn === item.replacement) box.setBgFn(item.original);
     }
     customBoxes.clear();
+    let stylesRestored = false;
     for (const item of stylePatches.reverse()) {
-      if (item.styles[item.key] === item.replacement) item.styles[item.key] = item.original;
+      if (item.styles[item.key] === item.replacement) {
+        item.styles[item.key] = item.original;
+        stylesRestored = true;
+      }
     }
     stylePatches.length = 0;
     const state = (globalThis as unknown as Record<symbol, FrameState | undefined>)[ALPS_STATE];
-    if (state) state.configVersion += 1;
+    if (state && stylesRestored) state.configVersion += 1;
   });
 }

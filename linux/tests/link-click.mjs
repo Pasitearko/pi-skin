@@ -79,7 +79,7 @@ await test('Kitty keeps native OSC 8 hover data but still opens only on Ctrl-lef
     assert.equal(f.terminal.write, f.originalWrite);
   }
 });
-await test('real Pi 1.3.0 fullscreen handler opens HTTP(S) and file only on Ctrl-left press AND release', () => {
+await test('real Pi 1.4.0 fullscreen handler opens HTTP(S) and file only on Ctrl-left press AND release', () => {
   for (const url of targets) {
     for (const modifier of [0, 4, 8, 20, 24, 28]) {
       const f = fixture(url);

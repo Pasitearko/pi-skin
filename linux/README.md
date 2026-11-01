@@ -1,6 +1,6 @@
 # pi-skin · Linux
 
-**CachyOS + Kitty + Pi 1.3.0：细线消息框、彩色天气、计时 / 额度共享行、干净复制和提问导航。**
+**CachyOS + Kitty + Pi 1.4.0：细线消息框、彩色天气、计时 / 额度共享行、干净复制和提问导航。**
 
 [English](README.en.md) · [项目首页](../README.md) · [配置清单](INVENTORY.md) · [安全说明](../SECURITY.md)
 
@@ -40,11 +40,13 @@
 | `clean-frame-copy` | 去除消息框 / 多行输入框装饰的高亮和复制；保留真实正文 | `/clean-copy on/off/status` |
 | `tool-status-style` | 🟩 正常框 `#4ADE80`；🟥 错误框 `#F87171`；无大块工具 / 原生 CUSTOM 背景 | 自动；保留 diff 和自定义 renderer 配色 |
 
+Linux ALPS 补丁将 ASSISTANT 与 THINK 的细边框及底边耗时文字设为淡黄色 `#E6D89C`（THINK 展开、折叠均适用）；正文、标题和其他消息框配色不变，不修改 Windows 补丁或全局主题。
+
 依赖 ALPS 的功能在不支持的布局上保留原生行为。Linux 输入框去框由 ALPS 0.3.4 编辑器适配提供，无需原基础包的 `bottom-input/editor.ts` 补丁。终端自己的 Shift 选区不受影响。
 
 ## 安装
 
-要求：**Pi 1.3.0**、Node **22.19.0+**（建议 24 LTS）、Kitty fullscreen / SGR mouse / 真彩色。图标建议使用 **Maple Mono NF CN**。
+要求：**Pi 1.4.0**、Node **22.19.0+**（建议 24 LTS）、Kitty fullscreen / SGR mouse / 真彩色。图标建议使用 **Maple Mono NF CN**。
 
 ```sh
 git clone https://github.com/Pasitearko/pi-skin.git
@@ -232,6 +234,10 @@ npm run check:privacy
 | 覆盖范围 | 用例 |
 |---|---:|
 | 包、配置、补丁安全与完整应用 / 撤回 | 7 |
+| ASSISTANT / THINK 淡黄色边框与耗时文字 | 6 |
+| 整框点击、拖选、交互优先级及生命周期 | 20 |
+| 三个私有接口扩展拒绝未验证 Pi 版本 | 9 |
+| Ctrl 链接门禁、悬停与 URL 标点处理 | 10 |
 | 天气 | 57 |
 | 计时 / 音频 | 36 |
 | 干净复制集成 | 24 |

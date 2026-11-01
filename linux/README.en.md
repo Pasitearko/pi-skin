@@ -1,6 +1,6 @@
 # pi-skin · Linux
 
-**CachyOS + Kitty + Pi 1.3.0: thin message frames, colored weather, a shared timer/quota row, clean copying and prompt navigation.**
+**CachyOS + Kitty + Pi 1.4.0: thin message frames, colored weather, a shared timer/quota row, clean copying and prompt navigation.**
 
 [中文](README.md) · [Project home](../README.en.md) · [Inventory](INVENTORY.md) · [Security](../SECURITY.md)
 
@@ -40,11 +40,13 @@ These original-package demo renders illustrate shared interactions; they are not
 | `clean-frame-copy` | Exclude message/input frame decorations from highlighting and copying; preserve real content | `/clean-copy on/off/status` |
 | `tool-status-style` | 🟩 Normal frame `#4ADE80`; 🟥 error `#F87171`; no large tool/native CUSTOM backgrounds | Automatic; preserves diffs and custom renderer colors |
 
+The Linux ALPS patch uses pale yellow `#E6D89C` for ASSISTANT and THINK thin borders and bottom-border elapsed text, including expanded and collapsed THINK blocks. Body text, headings and other message colors are unchanged; Windows patches and shared themes are not modified.
+
 ALPS-dependent features retain native behavior on unsupported layouts. Linux input-frame cleaning uses an ALPS 0.3.4 editor adapter, without the original package’s `bottom-input/editor.ts` patch. Terminal-owned Shift selection is unchanged.
 
 ## Install
 
-Requirements: **Pi 1.3.0**, Node **22.19.0+** (24 LTS recommended), Kitty with fullscreen / SGR mouse / true color. **Maple Mono NF CN** is recommended for icons.
+Requirements: **Pi 1.4.0**, Node **22.19.0+** (24 LTS recommended), Kitty with fullscreen / SGR mouse / true color. **Maple Mono NF CN** is recommended for icons.
 
 ```sh
 git clone https://github.com/Pasitearko/pi-skin.git
@@ -232,6 +234,10 @@ npm run check:privacy
 | Coverage | Cases |
 |---|---:|
 | Package, configuration, patch safety and full apply / undo | 7 |
+| ASSISTANT / THINK pale-yellow borders and elapsed text | 6 |
+| Frame clicks, selection, interaction priority and lifecycle | 20 |
+| Three private-API extensions reject unverified Pi versions | 9 |
+| Ctrl-only links, hover and URL punctuation | 10 |
 | Weather | 57 |
 | Timer / audio | 36 |
 | Clean-copy integration | 24 |

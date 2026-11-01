@@ -16,7 +16,7 @@ const jiti = createJiti(import.meta.url, { alias: {
   '@earendil-works/pi-tui': `${tuiRoot}/dist/index.js`,
 } });
 const sdk = await jiti.import(`${piRoot}/dist/index.js`);
-assert.equal(sdk.VERSION, '1.3.0', 'private APIs require a regression pass on each Pi release');
+assert.equal(sdk.VERSION, '1.4.0', 'private APIs require a regression pass on each Pi release');
 const tui = await jiti.import(`${tuiRoot}/dist/index.js`);
 const { renderLayoutFrame } = await jiti.import(`${tuiRoot}/dist/layout.js`);
 const { createBottomInputEditor } = await jiti.import(`${alpsRoot}/src/features/bottom-input/editor.ts`);
@@ -210,6 +210,7 @@ test('extension lifecycle, on/off and shutdown restore both native methods', () 
   extension.default({ on: (event, fn) => handlers.set(event, fn), registerCommand: (name, spec) => commands.set(name, spec) });
   const ctx = { hasUI: true, mode: 'tui', ui: { notify: (...args) => notices.push(args) } };
   handlers.get('session_start')({}, ctx);
+  assert.deepEqual(notices, [], 'supported Pi starts without warnings');
   const f = fixture(editor('hello\nworld')); all(f);
   assert.equal(tui.TuiAltScreen.prototype.getActiveSelectionText.call(f.screen), 'hello\nworld');
   commands.get('clean-copy').handler('off', ctx);

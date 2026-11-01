@@ -20,6 +20,8 @@ export type RenderBoxOptions = {
 
 const MIN_FULL_BOX_WIDTH = 8;
 const COMPACT_THINKING_BORDER_TOKEN = "borderAccent";
+// Linux-only renderer token: #E6D89C changes the frame, not shared theme colors.
+const ASSISTANT_THINKING_BORDER_TOKEN = "linuxAssistantThinkingBorder";
 
 export function padToWidth(line: string, width: number): string {
 	const current = visibleWidth(line);
@@ -33,6 +35,7 @@ function safeWidth(width: number): number {
 }
 
 function styleText(theme: ThemeLike, token: string, text: string): string {
+	if (token === ASSISTANT_THINKING_BORDER_TOKEN) return `\x1b[38;2;230;216;156m${text}\x1b[39m`;
 	return theme.fg(token, text);
 }
 
@@ -133,13 +136,13 @@ export function renderCompactThinkingBox(contentLines: readonly string[], width:
 	if (boxWidth < MIN_FULL_BOX_WIDTH) return simpleLines(contentLines, boxWidth);
 	const label = "THINK";
 	const style = getChromeStyle("thinking", {}, config);
-	const borderToken = COMPACT_THINKING_BORDER_TOKEN;
+	const borderToken = ASSISTANT_THINKING_BORDER_TOKEN;
 	const innerWidth = Math.max(0, boxWidth - 4);
 	const content = truncateToWidth(firstCompactThinkingLine(contentLines), innerWidth, "", false);
 	const padded = padToWidth(content, innerWidth);
 	return [
 		buildCompactThinkingTopBorder(label, boxWidth, theme, borderToken, style.label, options),
-		styleText(theme, borderToken, "│") + " " + styleText(theme, borderToken, padded) + " " + styleText(theme, borderToken, "│"),
+		styleText(theme, borderToken, "│") + " " + styleText(theme, COMPACT_THINKING_BORDER_TOKEN, padded) + " " + styleText(theme, borderToken, "│"),
 		buildCompactThinkingBottomBorder(boxWidth, theme, borderToken, options),
 	];
 }
@@ -255,6 +258,7 @@ export function renderNeonBox(kind: ChromeKind, contentLines: readonly string[],
 	const style = getChromeStyle(kind, { toolName: options.toolName, status }, options.config ?? DEFAULT_CONFIG);
 	const label = options.label ?? getChromeLabel(kind, { toolName: options.toolName, status });
 	const textToken = options.contentTextToken ?? style.text;
+	const borderToken = kind === "assistant" || kind === "thinking" ? ASSISTANT_THINKING_BORDER_TOKEN : style.border;
 	const truncateSuffix = options.truncateContent ? options.truncateSuffix ?? "" : "";
 	const innerWidth = Math.max(1, boxWidth - 4);
 
@@ -265,7 +269,7 @@ export function renderNeonBox(kind: ChromeKind, contentLines: readonly string[],
 	const pushContentLine = (line: string) => {
 		lines.push(line);
 	};
-	pushTextLine(buildTopBorder(label, boxWidth, theme, style.border, style.label, options.tokenText));
+	pushTextLine(buildTopBorder(label, boxWidth, theme, borderToken, style.label, options.tokenText));
 	for (const raw of rawLines) {
 		const split = String(raw).split("\n");
 		for (const part of split) {
@@ -275,15 +279,15 @@ export function renderNeonBox(kind: ChromeKind, contentLines: readonly string[],
 				if (partHasImage) {
 					pushContentLine(wrappedLine);
 				} else {
-					pushContentLine(applyLineBackground(theme, style.bg, renderContentLine(wrappedLine, boxWidth, theme, style.border, textToken, truncateSuffix), boxWidth));
+					pushContentLine(applyLineBackground(theme, style.bg, renderContentLine(wrappedLine, boxWidth, theme, borderToken, textToken, truncateSuffix), boxWidth));
 				}
 			}
 		}
 	}
 	if (lines.length === 1) {
-		pushContentLine(applyLineBackground(theme, style.bg, renderContentLine("", boxWidth, theme, style.border, textToken), boxWidth));
+		pushContentLine(applyLineBackground(theme, style.bg, renderContentLine("", boxWidth, theme, borderToken, textToken), boxWidth));
 	}
-	pushTextLine(buildBottomBorder(boxWidth, theme, style.border, options.elapsedText));
+	pushTextLine(buildBottomBorder(boxWidth, theme, borderToken, options.elapsedText));
 
 	// OSC133 边界 marker 只挂到外框边界，避免 WezTerm 将内容行行首 marker 解释成额外布局边界。
 	return restoreBoundaryOscMarkers(lines, markers, { startIndex: 0, endIndex: lines.length - 1 });

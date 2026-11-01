@@ -41,8 +41,11 @@
         {
           "path": "src/features/chrome-frame/chrome.ts",
           "before": "b66a96fec16aea1e3e7fdc33aacc873d41040ce7ca7d061fbaa0574e423c8647",
-          "after": "9c7bb1d1178c073ec6cca4887d9290ed6cb1ee28ea0766a1f5a2bf3c6df24d63",
-          "payload": "patches/alps-pi/src/features/chrome-frame/chrome.ts"
+          "after": "98bcaf4ed605e81a420c324bedb5934ab3182717d45dc995e9edc95d98c6735c",
+          "payload": "patches/alps-pi/src/features/chrome-frame/chrome.ts",
+          "previous": [
+            "9c7bb1d1178c073ec6cca4887d9290ed6cb1ee28ea0766a1f5a2bf3c6df24d63"
+          ]
         },
         {
           "path": "src/features/chrome-frame/patch.ts",

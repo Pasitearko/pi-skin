@@ -1,6 +1,6 @@
 # pi-skin · Linux 配置清单与同步边界
 
-快照核对日期：2026-10-18。环境：CachyOS Linux、Kitty、Pi 1.3.0。
+原始快照日期：2026-10-18（Pi 1.3.0）。最近核对：2026-11-01，环境为 CachyOS Linux、Kitty、Pi 1.4.0。
 
 2026-10-18 的整理只写入 `linux/`，保留了 Windows / 原基础包的所有代码、补丁、配置、截图、说明及当时的 npm 包名。GitHub 仓库更名为 `Pasitearko/pi-skin` 时，并未发布新的 npm 包。
 
@@ -21,7 +21,9 @@
 | ALPS / quota 的 13 个源码补丁 | `patches/` | 与本机版本一致，固定版本、哈希检查、显式应用和可撤回 |
 | MCP UI 翻译扩展噪声修复 | `compat/mcp-ui-filter/` | 独立可选，pi-mcp-adapter 5.3.2、双层过滤、上游 MIT 许可、11 项回归 |
 
-Linux 发布副本与本机有意保留的差异：working-timer 增加可选 `PI_COMPLETION_SOUND`，测试依赖改用克隆目录的隔离 node_modules，并修正旧平台断言；公开 GitHub MCP 模板额外启用 `approveTools: true`，与 UI 展示开关、账号权限分开说明；额外 README 记录安装边界。这些不会改变本机正在运行的扩展或确认策略。
+公开扩展支持可选 `PI_COMPLETION_SOUND`，测试依赖使用克隆目录的隔离 node_modules，不依赖本机安装路径；公开 GitHub MCP 模板额外启用 `approveTools: true`，与 UI 展示开关、账号权限分开说明。配置示例不覆盖本机配置，源码可以由克隆目录统一管理，避免同名扩展副本漂移。
+
+2026-11-01 的同步把旧工作副本中尚未提交的 Pi 1.4.0 版本门禁、依赖锁定、受支持版本接入与不支持版本回退测试合并到 Linux 子包；已有时间戳与 ALPS 兼容修复继续保留。ASSISTANT / THINK 细边框及底边耗时文字为淡黄色 `#E6D89C`。旧基础包独有的 conversation-timeline 注释 / benchmark、预览脚本清理和原生 MCP 推荐不属于本 Linux 运行链；为避免改动 Windows 根目录，不迁入这些调整，也不改变 Linux 可选 adapter 配置路线。
 
 ## 不收录
 

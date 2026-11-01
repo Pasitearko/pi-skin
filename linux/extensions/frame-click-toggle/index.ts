@@ -9,7 +9,7 @@ import {
 } from "@earendil-works/pi-tui";
 
 // Support only this Pi release: private mouse/component APIs require regression testing.
-const VERIFIED_PI_VERSION = "1.3.0";
+const VERIFIED_PI_VERSION = "1.4.0";
 // Read-only adaptation of the installed ALPS v18 renderer. No core/package writes.
 const ALPS_RENDER = Symbol.for("alps.pi.wrappedRender.v2");
 const ALPS_CACHE = Symbol.for("alps.pi.renderCache.v9");
