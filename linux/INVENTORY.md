@@ -23,7 +23,7 @@
 
 公开扩展支持可选 `PI_COMPLETION_SOUND`，测试依赖使用克隆目录的隔离 node_modules，不依赖本机安装路径；公开 GitHub MCP 模板额外启用 `approveTools: true`，与 UI 展示开关、账号权限分开说明。配置示例不覆盖本机配置，源码可以由克隆目录统一管理，避免同名扩展副本漂移。
 
-2026-11-01 的同步把旧工作副本中尚未提交的 Pi 1.4.0 版本门禁、依赖锁定、受支持版本接入与不支持版本回退测试合并到 Linux 子包；已有时间戳与 ALPS 兼容修复继续保留。ASSISTANT / THINK 细边框及底边耗时文字为淡黄色 `#E6D89C`。旧基础包独有的 conversation-timeline 注释 / benchmark、预览脚本清理和原生 MCP 推荐不属于本 Linux 运行链；为避免改动 Windows 根目录，不迁入这些调整，也不改变 Linux 可选 adapter 配置路线。
+2026-11-01 的同步把旧工作副本中尚未提交的 Pi 1.4.0 版本门禁、依赖锁定、受支持版本接入与不支持版本回退测试合并到 Linux 子包；已有时间戳与 ALPS 兼容修复继续保留。ASSISTANT 细边框及底边耗时文字为淡金色 `#E6D89C`，THINK（展开、折叠）为柔和蓝色 `#89B4FA`。旧基础包独有的 conversation-timeline 注释 / benchmark、预览脚本清理和原生 MCP 推荐不属于本 Linux 运行链；为避免改动 Windows 根目录，不迁入这些调整，也不改变 Linux 可选 adapter 配置路线。
 
 ## 不收录
 

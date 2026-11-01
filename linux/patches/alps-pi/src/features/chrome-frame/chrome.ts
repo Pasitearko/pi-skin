@@ -20,8 +20,9 @@ export type RenderBoxOptions = {
 
 const MIN_FULL_BOX_WIDTH = 8;
 const COMPACT_THINKING_BORDER_TOKEN = "borderAccent";
-// Linux-only renderer token: #E6D89C changes the frame, not shared theme colors.
-const ASSISTANT_THINKING_BORDER_TOKEN = "linuxAssistantThinkingBorder";
+// Linux-only frame colors: ASSISTANT gold #E6D89C, THINK blue #89B4FA.
+const ASSISTANT_BORDER_TOKEN = "linuxAssistantBorder";
+const THINKING_BORDER_TOKEN = "linuxThinkingBorder";
 
 export function padToWidth(line: string, width: number): string {
 	const current = visibleWidth(line);
@@ -35,7 +36,8 @@ function safeWidth(width: number): number {
 }
 
 function styleText(theme: ThemeLike, token: string, text: string): string {
-	if (token === ASSISTANT_THINKING_BORDER_TOKEN) return `\x1b[38;2;230;216;156m${text}\x1b[39m`;
+	if (token === ASSISTANT_BORDER_TOKEN) return `\x1b[38;2;230;216;156m${text}\x1b[39m`;
+	if (token === THINKING_BORDER_TOKEN) return `\x1b[38;2;137;180;250m${text}\x1b[39m`;
 	return theme.fg(token, text);
 }
 
@@ -136,7 +138,7 @@ export function renderCompactThinkingBox(contentLines: readonly string[], width:
 	if (boxWidth < MIN_FULL_BOX_WIDTH) return simpleLines(contentLines, boxWidth);
 	const label = "THINK";
 	const style = getChromeStyle("thinking", {}, config);
-	const borderToken = ASSISTANT_THINKING_BORDER_TOKEN;
+	const borderToken = THINKING_BORDER_TOKEN;
 	const innerWidth = Math.max(0, boxWidth - 4);
 	const content = truncateToWidth(firstCompactThinkingLine(contentLines), innerWidth, "", false);
 	const padded = padToWidth(content, innerWidth);
@@ -258,7 +260,7 @@ export function renderNeonBox(kind: ChromeKind, contentLines: readonly string[],
 	const style = getChromeStyle(kind, { toolName: options.toolName, status }, options.config ?? DEFAULT_CONFIG);
 	const label = options.label ?? getChromeLabel(kind, { toolName: options.toolName, status });
 	const textToken = options.contentTextToken ?? style.text;
-	const borderToken = kind === "assistant" || kind === "thinking" ? ASSISTANT_THINKING_BORDER_TOKEN : style.border;
+	const borderToken = kind === "assistant" ? ASSISTANT_BORDER_TOKEN : kind === "thinking" ? THINKING_BORDER_TOKEN : style.border;
 	const truncateSuffix = options.truncateContent ? options.truncateSuffix ?? "" : "";
 	const innerWidth = Math.max(1, boxWidth - 4);
 
