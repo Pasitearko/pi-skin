@@ -23,7 +23,7 @@ await test('Linux package is separate, explicit and loads all seven extensions',
   assert.equal(manifest.private, true);
   assert.equal(manifest.pi.extensions.length, 7);
   const sdk = await jiti.import(aliases['@earendil-works/pi-coding-agent']);
-  assert.equal(sdk.VERSION, '1.4.0');
+  assert.equal(sdk.VERSION, '1.5.0');
   const loader = await jiti.import(path.join(modules, '@earendil-works/pi-coding-agent/dist/core/extensions/loader.js'));
   const loaded = await loader.loadExtensions(manifest.pi.extensions.map(file => path.join(root, file)), root);
   assert.deepEqual(loaded.errors, []);

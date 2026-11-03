@@ -1,6 +1,6 @@
 # pi-skin · Linux
 
-**CachyOS + Kitty + Pi 1.4.0: thin message frames, colored weather, a shared timer/quota row, clean copying and prompt navigation.**
+**CachyOS + Kitty + Pi 1.5.0: thin message frames, colored weather, a shared timer/quota row, clean copying and prompt navigation.**
 
 [中文](README.md) · [Project home](../README.en.md) · [Inventory](INVENTORY.md) · [Security](../SECURITY.md)
 
@@ -46,7 +46,9 @@ ALPS-dependent features retain native behavior on unsupported layouts. Linux inp
 
 ## Install
 
-Requirements: **Pi 1.4.0**, Node **22.19.0+** (24 LTS recommended), Kitty with fullscreen / SGR mouse / true color. **Maple Mono NF CN** is recommended for icons.
+Requirements: **Pi 1.5.0**, Node **22.19.0+** (24 LTS recommended), Kitty with fullscreen / SGR mouse / true color. **Maple Mono NF CN** is recommended for icons.
+
+The three private-API extensions support only the verified Pi 1.5.0 release. Older or future releases warn and retain native behavior; each upgrade requires a new regression pass. This regression pass covers clean-frame-copy, frame-click-toggle and tool-status-style. tick-rail passes package loading, but its dedicated navigation verification remains at 1.4.0 and needs separate interactive acceptance testing.
 
 ```sh
 git clone https://github.com/Pasitearko/pi-skin.git
@@ -235,12 +237,12 @@ npm run check:privacy
 |---|---:|
 | Package, configuration, patch safety and full apply / undo | 7 |
 | ASSISTANT gold / THINK blue borders and elapsed text | 6 |
-| Frame clicks, selection, interaction priority and lifecycle | 20 |
-| Three private-API extensions reject unverified Pi versions | 9 |
+| Frame clicks, selection, interaction priority and lifecycle | 25 |
+| Three private-API extensions: install / cleanup, non-TUI isolation, unverified-version rejection | 15 |
 | Ctrl-only links, hover and URL punctuation | 10 |
 | Weather | 57 |
 | Timer / audio | 36 |
-| Clean-copy integration | 24 |
+| Clean-copy integration | 29 |
 | CUSTOM / tool-frame rendering combinations | 960 |
 | Optional MCP UI regression ([run separately](compat/mcp-ui-filter/README.md)) | 11 |
 

@@ -16,7 +16,7 @@ const jiti = createJiti(import.meta.url, { alias: {
   '@earendil-works/pi-tui': `${tuiRoot}/dist/index.js`,
 } });
 const sdk = await jiti.import(`${piRoot}/dist/index.js`);
-assert.equal(sdk.VERSION, '1.4.0', 'private APIs require a regression pass on each Pi release');
+assert.equal(sdk.VERSION, '1.5.0', 'private APIs require a regression pass on each Pi release');
 const tui = await jiti.import(`${tuiRoot}/dist/index.js`);
 const { renderLayoutFrame } = await jiti.import(`${tuiRoot}/dist/layout.js`);
 const { createBottomInputEditor } = await jiti.import(`${alpsRoot}/src/features/bottom-input/editor.ts`);
@@ -67,10 +67,10 @@ function highlightedCells(line) {
     if (chunk.startsWith('\x1b[')) {
       const codes = chunk.slice(2, -1).split(';').map(Number);
       for (const code of codes) { if (code === 0 || code === 27) inverse = false; if (code === 7) inverse = true; }
-    } else for (const ch of chunk) {
-      // Used only on ASCII fixtures; colored ANSI sequences consume no cells.
-      if (inverse) result.push(col);
-      col++;
+    } else for (const { segment } of new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(chunk)) {
+      const width = tui.visibleWidth(segment);
+      if (inverse) for (let offset = 0; offset < width; offset++) result.push(col + offset);
+      col += width;
     }
   }
   return result;
@@ -154,6 +154,106 @@ test('highlight excludes the same outer cells as copied content', () => {
     assert.ok(cells.length > 0);
     assert.ok(cells.every(col => col >= 2 && col < f.width - 2));
   }
+});
+function withoutCursor(lines) {
+  return lines.map(line => line.split(tui.CURSOR_MARKER).join('').replace(/\x1b\[(?:7|27)m/g, ''));
+}
+function paint(screen, incoming) {
+  const native = nativeHighlight.call(screen, incoming.lines, incoming.screen.currentLayout);
+  return cleanSelectionHighlight(screen, incoming.lines, incoming.screen.currentLayout, native);
+}
+function assertBodyHighlight(lines, x, width) {
+  for (const line of lines) {
+    const cells = highlightedCells(line);
+    assert.ok(cells.length > 0, 'body content must stay selected');
+    assert.ok(cells.every(col => col < x || col >= x + width || col >= x + 2 && col < x + width - 2),
+      `frame sides must not be selected: ${JSON.stringify({ cells, x, width, line })}`);
+  }
+}
+function messageFrame(text, width = 30) {
+  const lines = ['╭─ TEST ' + '─'.repeat(width - 9) + '╮',
+    ...text.split('\n').map(line => '│ ' + line.padEnd(width - 4) + ' │'), '╰' + '─'.repeat(width - 2) + '╯'];
+  const render = () => lines;
+  render[Symbol.for('alps.pi.wrappedRender.v2')] = { version: 18 };
+  return { render, [Symbol.for('alps.pi.renderCache.v9')]: { width, lines } };
+}
+test('incoming editor highlight uses new body while copy still uses the committed frame', () => {
+  const e = editor('hello');
+  const f = fixture(e); all(f);
+  f.screen.previousScreen = withoutCursor(f.lines);
+  const previous = f.screen.previousScreen;
+  const layout = f.screen.currentLayout;
+  e.setText('world');
+  const next = fixture(e); next.lines = withoutCursor(next.lines);
+  noRerender(next);
+  const highlighted = paint(f.screen, next);
+  assertBodyHighlight(highlighted.slice(1, -1), 0, f.width);
+  assert.deepEqual(highlightedCells(highlighted[0]), []);
+  assert.deepEqual(highlightedCells(highlighted.at(-1)), []);
+  assert.equal(clean(f), 'hello', 'copy must not consume an uncommitted render');
+  assert.equal(f.screen.previousScreen, previous);
+  assert.equal(f.screen.currentLayout, layout);
+});
+test('incoming resize and layout offsets do not reuse previous editor geometry', () => {
+  const e = editor('hello');
+  const f = fixture(e);
+  const previous = f.screen.previousScreen;
+  const next = fixture(e, 36, { x: 3, y: 2 }); next.lines = withoutCursor(next.lines);
+  select(f, 2, 3, next.lines.length - 1, 39);
+  f.screen.terminal.columns = 39;
+  noRerender(next);
+  const highlighted = paint(f.screen, next);
+  assertBodyHighlight(highlighted.slice(3, -1), 3, 36);
+  assert.deepEqual(highlightedCells(highlighted[2]).filter(col => col >= 3), []);
+  assert.deepEqual(highlightedCells(highlighted.at(-1)).filter(col => col >= 3), []);
+  assert.equal(f.screen.previousScreen, previous);
+});
+test('incoming ALPS message cache is verified against new lines, never the prior screen', () => {
+  const component = messageFrame('hello');
+  const f = fixture(component, 30); all(f);
+  const updated = messageFrame('world');
+  component.render = updated.render;
+  component[Symbol.for('alps.pi.renderCache.v9')] = updated[Symbol.for('alps.pi.renderCache.v9')];
+  const next = fixture(component, 30);
+  const highlighted = paint(f.screen, next);
+  assertBodyHighlight(highlighted.slice(1, -1), 0, 30);
+  assert.equal(clean(f), nativeCopy.call(f.screen), 'old copy source with a new cache must fail closed');
+  f.screen.previousScreen = next.lines; f.screen.currentLayout = next.screen.currentLayout;
+  assert.equal(clean(f), 'TEST\nworld');
+});
+test('Unicode highlight bounds count Chinese, emoji and combining grapheme cells', () => {
+  const f = fixture(editor('中文 🌧️ e\u0301 😀')); all(f);
+  f.lines = withoutCursor(f.lines);
+  assertBodyHighlight(paint(f.screen, f).slice(1, -1), 0, f.width);
+  select(f, 1, 2, 1, 12);
+  const highlighted = paint(f.screen, f);
+  const columns = f.screen.getSelectionColumns(f.lines[1], 1, f.screen.selection);
+  assert.deepEqual(highlightedCells(highlighted[1]), Array.from({ length: columns.end - columns.start }, (_, i) => columns.start + i));
+});
+test('real ScrollView uses incoming content, clips offscreen endpoints and tracks scrolling', () => {
+  const component = messageFrame('one\ntwo\nthree\nfour\nfive');
+  const scroll = new tui.ScrollView(component, { follow: 'none', scrollbar: 'hidden' });
+  const old = renderLayoutFrame(scroll, 30, 3, () => {});
+  const f = fixture(component, 30);
+  f.screen.previousScreen = old.lines; f.screen.currentLayout = old;
+  select(f, 0, 0, 6, 30);
+  f.screen.selection.start.scrollView = scroll;
+  f.screen.selection.end.scrollView = scroll;
+  const updated = messageFrame('new one\nnew two\nnew three\nnew four\nnew five');
+  component.render = updated.render;
+  component[Symbol.for('alps.pi.renderCache.v9')] = updated[Symbol.for('alps.pi.renderCache.v9')];
+  for (const top of [1, 2, 3]) {
+    scroll.scrollTo(top);
+    const nextLayout = renderLayoutFrame(scroll, 30, 3, () => {});
+    const next = { lines: nextLayout.lines, screen: { currentLayout: nextLayout } };
+    assertBodyHighlight(paint(f.screen, next), 0, 30);
+    const tampered = { ...next, lines: next.lines.map((line, i) => i ? line : line.replace('│', '!')) };
+    const native = nativeHighlight.call(f.screen, tampered.lines, nextLayout);
+    assert.equal(paint(f.screen, tampered)[0], native[0], 'visible overlays must retain native highlighting');
+  }
+  const committed = renderLayoutFrame(scroll, 30, 3, () => {});
+  f.screen.currentLayout = committed; f.screen.previousScreen = committed.lines;
+  assert.equal(clean(f), 'TEST\nnew one\nnew two\nnew three\nnew four\nnew five');
 });
 test('a decoration-only selection remains an empty real selection', () => {
   const f = fixture(editor('hello')); select(f, 0, 0, 0, 60);

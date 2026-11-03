@@ -15,7 +15,7 @@ const jiti = createJiti(import.meta.url, { moduleCache: true, alias: {
   '@earendil-works/pi-tui': tuiEntry,
 } });
 const sdk = await jiti.import(join(sdkRoot, 'dist/index.js'));
-assert.equal(sdk.VERSION, '1.4.0', 'test only the supported Pi release');
+assert.equal(sdk.VERSION, '1.5.0', 'test only the supported Pi release');
 const themes = await jiti.import(join(sdkRoot, 'dist/modes/interactive/theme/theme.js'));
 const { visibleWidth } = await jiti.import(tuiEntry);
 const alps = await jiti.import(join(process.env.ALPS_TEST_ROOT ?? join(homedir(), '.pi/agent/npm/node_modules/alps-pi'), 'src/features/chrome-frame/patch.ts'));

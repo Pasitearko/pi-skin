@@ -2,7 +2,7 @@ import { CustomMessageComponent, InteractiveMode, Theme, VERSION, type Extension
 
 // Adapt the installed ALPS renderer without editing Pi, npm packages or the theme.
 // Support only this Pi release: private rendering APIs require regression testing.
-const VERIFIED_PI_VERSION = "1.4.0";
+const VERIFIED_PI_VERSION = "1.5.0";
 const ALPS_STATE = Symbol.for("alps.pi.patch.v1");
 const OWNER = Symbol.for("pi.tool-status-style.owner.v1");
 const TOOL_BACKGROUNDS = new Set(["toolPendingBg", "toolSuccessBg", "toolErrorBg"]);

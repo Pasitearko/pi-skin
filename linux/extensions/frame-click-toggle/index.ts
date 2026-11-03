@@ -9,7 +9,7 @@ import {
 } from "@earendil-works/pi-tui";
 
 // Support only this Pi release: private mouse/component APIs require regression testing.
-const VERIFIED_PI_VERSION = "1.4.0";
+const VERIFIED_PI_VERSION = "1.5.0";
 // Read-only adaptation of the installed ALPS v18 renderer. No core/package writes.
 const ALPS_RENDER = Symbol.for("alps.pi.wrappedRender.v2");
 const ALPS_CACHE = Symbol.for("alps.pi.renderCache.v9");
@@ -22,6 +22,7 @@ type RuntimeComponent = {
   render: (width: number) => string[];
   handleMouse?: MouseHandler;
   expanded?: boolean;
+  _expanded?: boolean; // Pi 1.5 CustomMessageComponent stores expansion privately.
   result?: unknown;
   toolName?: string;
   hideThinkingBlock?: boolean;
@@ -149,8 +150,9 @@ export function handleFrameMouse(
     return { handled: true, render: true };
   }
   if (kind === "tool" && !instance.result) return;
-  if (typeof instance.expanded !== "boolean" || !instance.setExpanded) return;
-  instance.setExpanded(!instance.expanded);
+  const expanded = instance instanceof CustomMessageComponent ? (instance as RuntimeComponent)._expanded : instance.expanded;
+  if (typeof expanded !== "boolean" || !instance.setExpanded) return;
+  instance.setExpanded(!expanded);
   return { handled: true, render: true };
 }
 

@@ -2,7 +2,7 @@ import { VERSION, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Box, Container, Editor, TuiAltScreen, sliceByColumn, stripTerminalSequences, visibleWidth } from "@earendil-works/pi-tui";
 
 // Support only this Pi release: private selection/layout APIs require regression testing.
-const VERIFIED_PI_VERSION = "1.4.0";
+const VERIFIED_PI_VERSION = "1.5.0";
 const ALPS_RENDER = Symbol.for("alps.pi.wrappedRender.v2");
 const ALPS_CACHE = Symbol.for("alps.pi.renderCache.v9");
 const OWNER = Symbol.for("pi.clean-frame-copy.owner.v1");
@@ -120,10 +120,9 @@ function editorFrameMasks(component: Component, x: number, y: number, width: num
 }
 
 /** Shared provenance/masks for BOTH copy and highlight; never render inside this pass. */
-function selectionPlan(screen: Screen, layout = screen.currentLayout): SelectionPlan | undefined {
+function selectionPlan(screen: Screen, layout = screen.currentLayout, source = screen.previousScreen): SelectionPlan | undefined {
   const selection = screen.getSelectionBounds();
   if (!selection || !layout || screen.hasOverlay?.()) return;
-  let source = screen.previousScreen;
   let root = layout.root;
   let offsetX = 0, offsetY = 0;
   let scrollBox: LayoutBox | undefined;
@@ -211,7 +210,9 @@ export function cleanSelectionText(screen: Screen, originalText: string): string
 
 /** Paint only the same content cells used by copy; use the INCOMING layout, not the previous frame. */
 export function cleanSelectionHighlight(screen: Screen, lines: string[], layout: Layout | undefined, native: string[]): string[] {
-  const plan = selectionPlan(screen, layout);
+  // applySelection runs before Pi commits previousScreen/currentLayout. Match
+  // provenance against this render, not the preceding (possibly stale) frame.
+  const plan = selectionPlan(screen, layout, lines);
   if (!plan) return native;
   const { selection, source, masks, scrollBox } = plan;
   let dx = 0, dy = 0, minRow = 0, maxRow = lines.length - 1, minColumn = 0, maxColumn = screen.terminal.columns;

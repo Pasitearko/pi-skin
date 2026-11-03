@@ -15,9 +15,65 @@ const alias = Object.fromEntries(['pi-coding-agent', 'pi-tui', 'pi-ai', 'pi-agen
 const jiti = createJiti(import.meta.url, { alias, fsCache: false });
 const sdk = await jiti.import(alias['@earendil-works/pi-coding-agent']);
 const tui = await jiti.import(alias['@earendil-works/pi-tui']);
-assert.equal(sdk.VERSION, '1.4.0', 'run compatibility tests against the supported Pi release');
+assert.equal(sdk.VERSION, '1.5.0', 'run compatibility tests against the supported Pi release');
 const [major, minor, patch] = sdk.VERSION.split('.').map(Number);
 const unsupported = [`${major}.${minor - 1}.0`, `${major}.${minor}.${patch + 1}`, `${major}.${minor + 1}.0`];
+const targets = [
+  [tui.TuiAltScreen.prototype, 'getActiveSelectionText'],
+  [tui.TuiAltScreen.prototype, 'applySelection'],
+  [sdk.CustomMessageComponent.prototype, 'rebuild'],
+  ...['fg', 'bg', 'getBgAnsi', 'style'].map(key => [sdk.Theme.prototype, key]),
+  ...['renderSessionItems', 'handleEvent'].map(key => [sdk.InteractiveMode.prototype, key]),
+  ...['ToolExecutionComponent', 'AssistantMessageComponent', 'BashExecutionComponent',
+    'BranchSummaryMessageComponent', 'CompactionSummaryMessageComponent',
+    'SkillInvocationMessageComponent', 'CustomMessageComponent']
+    .map(key => [sdk[key].prototype, 'handleMouse']),
+];
+const descriptors = () => targets.map(([target, key]) => Object.getOwnPropertyDescriptor(target, key));
+
+for (const name of ['clean-frame-copy', 'frame-click-toggle', 'tool-status-style']) {
+  const { default: extension } = await jiti.import(join(root, 'extensions', name, 'index.ts'));
+  const expectedTargets = name === 'clean-frame-copy' ? targets.slice(0, 2)
+    : name === 'tool-status-style' ? targets.slice(2, 9) : targets.slice(9);
+  const setup = () => {
+    const handlers = new Map(), notifications = [];
+    extension({ on: (event, handler) => handlers.set(event, handler), registerCommand() {} });
+    return { handlers, notifications, ui: { notify: (...args) => notifications.push(args) } };
+  };
+  test(`${name}: Pi ${sdk.VERSION} installs every required hook and restores them on shutdown`, async t => {
+    const before = descriptors();
+    const { handlers, notifications, ui } = setup();
+    const ctx = { mode: 'tui', hasUI: true, ui };
+    t.after(async () => { await handlers.get('session_shutdown')({}, ctx); });
+    assert.deepEqual(descriptors(), before, 'factory must not install hooks');
+    await handlers.get('session_start')({}, ctx);
+    assert.deepEqual(notifications, [], 'supported startup must not warn');
+    for (const [target, key] of expectedTargets) {
+      const index = targets.findIndex(([candidate, method]) => candidate === target && method === key);
+      assert.notEqual(target[key], before[index]?.value, `${target.constructor.name}.${key} must be hooked`);
+    }
+    const installed = descriptors();
+    await handlers.get('resources_discover')?.({}, ctx);
+    assert.deepEqual(descriptors(), installed, 'discovery must not stack wrappers');
+    await handlers.get('session_shutdown')({}, ctx);
+    await handlers.get('session_shutdown')({}, ctx);
+    assert.deepEqual(descriptors(), before, 'shutdown must restore all native descriptors idempotently');
+  });
+  test(`${name}: supported Pi leaves RPC, print and no-UI modes untouched`, async () => {
+    for (const [mode, hasUI] of [['rpc', true], ['print', false], ['tui', false]]) {
+      const before = descriptors();
+      const { handlers, notifications, ui } = setup();
+      const ctx = { mode, hasUI, ui };
+      try {
+        await handlers.get('session_start')({}, ctx);
+        await handlers.get('resources_discover')?.({}, ctx);
+        assert.deepEqual(descriptors(), before, `${mode}/${hasUI} must not install terminal hooks`);
+        assert.deepEqual(notifications, []);
+      } finally { await handlers.get('session_shutdown')({}, ctx); }
+      assert.deepEqual(descriptors(), before);
+    }
+  });
+}
 
 for (const name of ['clean-frame-copy', 'frame-click-toggle', 'tool-status-style']) {
   for (const version of unsupported) {
@@ -31,18 +87,6 @@ for (const name of ['clean-frame-copy', 'frame-click-toggle', 'tool-status-style
         moduleCache: false, fsCache: false,
       });
       const { default: extension } = await isolated.import(join(root, 'extensions', name, 'index.ts'));
-      const targets = [
-        [tui.TuiAltScreen.prototype, 'getActiveSelectionText'],
-        [tui.TuiAltScreen.prototype, 'applySelection'],
-        [sdk.CustomMessageComponent.prototype, 'rebuild'],
-        ...['fg', 'bg', 'getBgAnsi', 'style'].map(key => [sdk.Theme.prototype, key]),
-        ...['renderSessionItems', 'handleEvent'].map(key => [sdk.InteractiveMode.prototype, key]),
-        ...['ToolExecutionComponent', 'AssistantMessageComponent', 'BashExecutionComponent',
-          'BranchSummaryMessageComponent', 'CompactionSummaryMessageComponent',
-          'SkillInvocationMessageComponent', 'CustomMessageComponent']
-          .map(key => [sdk[key].prototype, 'handleMouse']),
-      ];
-      const descriptors = () => targets.map(([target, key]) => Object.getOwnPropertyDescriptor(target, key));
       const before = descriptors();
       const stateKey = Symbol.for('alps.pi.patch.v1');
       const previousState = Object.getOwnPropertyDescriptor(globalThis, stateKey);

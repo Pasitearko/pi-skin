@@ -1,6 +1,6 @@
 # pi-skin · Linux
 
-**CachyOS + Kitty + Pi 1.4.0：细线消息框、彩色天气、计时 / 额度共享行、干净复制和提问导航。**
+**CachyOS + Kitty + Pi 1.5.0：细线消息框、彩色天气、计时 / 额度共享行、干净复制和提问导航。**
 
 [English](README.en.md) · [项目首页](../README.md) · [配置清单](INVENTORY.md) · [安全说明](../SECURITY.md)
 
@@ -46,7 +46,9 @@ Linux ALPS 补丁中，ASSISTANT 的细边框及底边耗时文字保持淡金�
 
 ## 安装
 
-要求：**Pi 1.4.0**、Node **22.19.0+**（建议 24 LTS）、Kitty fullscreen / SGR mouse / 真彩色。图标建议使用 **Maple Mono NF CN**。
+要求：**Pi 1.5.0**、Node **22.19.0+**（建议 24 LTS）、Kitty fullscreen / SGR mouse / 真彩色。图标建议使用 **Maple Mono NF CN**。
+
+三个私有接口扩展仅支持已验证的 Pi 1.5.0；旧版或未来版本会警告并保留原生行为，升级后需重新回归验证。本次专项回归覆盖选区去框、整框单击和工具状态样式；tick-rail 已通过包加载检查，但其导航交互的专门验证仍停留在 1.4.0，需另行实机验收。
 
 ```sh
 git clone https://github.com/Pasitearko/pi-skin.git
@@ -235,12 +237,12 @@ npm run check:privacy
 |---|---:|
 | 包、配置、补丁安全与完整应用 / 撤回 | 7 |
 | ASSISTANT 金色 / THINK 蓝色边框与耗时文字 | 6 |
-| 整框点击、拖选、交互优先级及生命周期 | 20 |
-| 三个私有接口扩展拒绝未验证 Pi 版本 | 9 |
+| 整框点击、拖选、交互优先级及生命周期 | 25 |
+| 三个私有接口扩展接入 / 清理、非 TUI 零副作用、拒绝未验证版本 | 15 |
 | Ctrl 链接门禁、悬停与 URL 标点处理 | 10 |
 | 天气 | 57 |
 | 计时 / 音频 | 36 |
-| 干净复制集成 | 24 |
+| 干净复制集成 | 29 |
 | CUSTOM / 工具框渲染组合 | 960 |
 | 可选 MCP UI 过滤回归（[单独运行](compat/mcp-ui-filter/README.md)） | 11 |
 

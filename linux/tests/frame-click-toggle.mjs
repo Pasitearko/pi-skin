@@ -11,10 +11,11 @@ const alias = Object.fromEntries(['pi-coding-agent','pi-tui','pi-ai','pi-agent-c
 const jiti = createJiti(import.meta.url, { alias, fsCache: false });
 const root = join(dirname(dirname(fileURLToPath(import.meta.url))), "extensions");
 const sdk = await jiti.import(alias['@earendil-works/pi-coding-agent']);
-assert.equal(sdk.VERSION, '1.4.0', 'test only the supported Pi release');
+assert.equal(sdk.VERSION, '1.5.0', 'test only the supported Pi release');
 sdk.initTheme('dark');
 const tui = await jiti.import(alias['@earendil-works/pi-tui']);
-const alps = await jiti.import(join(root,'../node_modules/alps-pi/src/features/chrome-frame/patch.ts'));
+const alpsRoot = process.env.ALPS_TEST_ROOT || join(root, '../node_modules/alps-pi');
+const alps = await jiti.import(join(alpsRoot, 'src/features/chrome-frame/patch.ts'));
 const extension = await jiti.import(join(root,'frame-click-toggle/index.ts'));
 const width = 68;
 const ui = { requestRender() {} };
@@ -134,6 +135,41 @@ try {
     const item=new sdk.ToolExecutionComponent('read','pending',{path:'x'}, {},undefined,ui,process.cwd());
     const calls=countToggles(item);item.handleMouse(event(item,0,0));assert.equal(calls(),0);
   });
+  await test('Pi 1.5 deferred arguments keep displayed hit geometry until render or an explicit toggle',()=>{
+    let rendererCalls=0;
+    const item=tool({renderCall:args=>{rendererCalls++;return new tui.Text(args.path,0,0);},
+      renderResult:()=>new tui.Text('result',0,0)});
+    const displayed=item.render(width);
+    const cache=item[Symbol.for('alps.pi.renderCache.v9')];
+    const e={type:'click',button:'left',x:0,y:0,screenX:0,screenY:0,width,height:displayed.length,
+      shift:false,alt:false,ctrl:false,clickCount:1};
+    const before=rendererCalls;
+    for(const path of ['partial','more partial','latest '+('long argument '.repeat(50))]) item.updateArgs({path});
+    assert.equal(item.argsPending,true);
+    assert.equal(rendererCalls,before,'streaming deltas must remain deferred');
+    assert.equal(extension.frameGeometry(item,e,'tool').height,displayed.length);
+    item.handleMouse({...e,ctrl:true});
+    item.handleMouse({...e,type:'press'});
+    assert.equal(item.argsPending,true,'hit testing must not flush pending arguments');
+    assert.equal(rendererCalls,before);
+    assert.equal(item[Symbol.for('alps.pi.renderCache.v9')],cache);
+    const original=item.setExpanded;
+    let toggles=0;
+    item.setExpanded=function(value){
+      assert.equal(rendererCalls,before,'no renderer may run before the actual expansion action');
+      assert.equal(this.argsPending,true);
+      toggles++;return original.call(this,value);
+    };
+    assert.ok(item.handleMouse(e)?.handled,'click must work without an intervening render');
+    assert.equal(toggles,1);assert.equal(item.expanded,true);
+    item.setExpanded=original;
+    const next=item.render(width);
+    assert.equal(item.argsPending,false);
+    assert.ok(next.some(line=>plain(line).includes('latest')));
+    assert.notEqual(next.length,displayed.length);
+    assert.equal(extension.frameGeometry(item,{...e,height:next.length},'tool').height,next.length);
+    assert.equal(extension.frameGeometry(item,e,'tool'),undefined,'old dimensions must no longer hit');
+  });
   await test('edit frames use normal native geometry even while other tools are compact',()=>{
     const item=tool(undefined,'edit');
     assert.ok(extension.frameGeometry(item,event(item,5,1),'tool').rows);
@@ -173,6 +209,62 @@ try {
     assert.equal(item.thinkingVisibilityOverrides.get(0),true);
     assert.equal(item.handleMouse(event(item,0,0)),undefined);
   });
+  await test('Pi 1.5 hidden thinking with an empty label creates no clickable frame',()=>{
+    const message={role:'assistant',content:[{type:'thinking',thinking:'private detail'}],timestamp:1000,stopReason:'stop'};
+    const item=new sdk.AssistantMessageComponent(message,true);
+    item.render(width); // Seed an ordinary labeled THINK cache first.
+    item.setHiddenThinkingLabel('');
+    const lines=item.render(width);
+    assert.equal(lines.length,0);
+    const e={type:'click',button:'left',x:0,y:0,width,height:0,clickCount:1};
+    assert.equal(extension.frameGeometry(item,e,'thinking'),undefined);
+    assert.equal(item.handleMouse(e),undefined);
+    assert.equal(item.hideThinkingBlock,true);
+    item.updateContent({...message,content:[...message.content,{type:'text',text:'visible answer'}]});
+    const answer=item.render(width);
+    assert.ok(answer.some(line=>plain(line).includes('visible answer')));
+    assert.equal(item.handleMouse(event(item,0,0)),undefined,'ordinary assistant text is not collapsible');
+  });
+  await test('Pi 1.5 reused Markdown nodes and separate thinking runs retain independent clicks',()=>{
+    const message={role:'assistant',content:[{type:'thinking',thinking:'first thought'},
+      {type:'text',text:'first answer'},{type:'thinking',thinking:'second thought'},{type:'text',text:'last answer'}],
+      timestamp:1000,stopReason:'stop'};
+    const item=new sdk.AssistantMessageComponent(message,false);
+    item.render(width);
+    const nodes=item.markdownSlots.map(slot=>slot.markdown);
+    const updated={...message,content:message.content.map(block=>block.type==='thinking'
+      ? {...block,thinking:block.thinking+' streamed'} : {...block,text:block.text+' streamed'})};
+    item.updateContent(updated,true);
+    assert.deepEqual(item.markdownSlots.map(slot=>slot.markdown),nodes);
+    for(const [index,text] of [[1,'second thought streamed'],[0,'first thought streamed']]) {
+      const lines=item.render(width);
+      const row=lines.findIndex(line=>plain(line).includes(text));
+      assert.ok(row>0);
+      assert.ok(item.handleMouse(event(item,3,row))?.handled);
+      assert.equal(item.thinkingVisibilityOverrides.get(index),true);
+    }
+    assert.equal(item.hideThinkingBlock,false,'per-run clicks must not hide the entire answer');
+    const lines=item.render(width);
+    const row=lines.findIndex(line=>plain(line).includes('last answer streamed'));
+    assert.ok(row>=0);
+    assert.equal(item.handleMouse(event(item,3,row)),undefined);
+  });
+  await test('branch, skill, custom and bash frame borders toggle native expansion once',()=>{
+    const factories=[
+      ()=>new sdk.BranchSummaryMessageComponent({summary:'branch summary 中文',fromId:'fixture'}),
+      ()=>new sdk.SkillInvocationMessageComponent({name:'fixture',content:'skill body 中文',filePath:'/fixture/SKILL.md'}),
+      ()=>new sdk.CustomMessageComponent({role:'custom',customType:'fixture',content:'custom body 中文',display:true},
+        (_message,{expanded})=>new tui.Text(expanded?'expanded custom body 中文':'collapsed custom',0,0)),
+      ()=>{const item=new sdk.BashExecutionComponent('echo fixture',ui);item.appendOutput('output\n');item.setComplete(0,false);return item;},
+    ];
+    for(const make of factories) for(const expanded of [false,true]) {
+      const item=make();item.setExpanded(expanded);
+      const calls=countToggles(item);
+      assert.ok(item.handleMouse(event(item,0,0))?.handled,item.constructor.name);
+      assert.equal(item instanceof sdk.CustomMessageComponent?item._expanded:item.expanded,!expanded,item.constructor.name);
+      assert.equal(calls(),1,item.constructor.name);
+    }
+  });
   await test('compaction frame border, expanded body and padding all toggle',()=>{
     for(const expanded of [false,true]) {
       const item=new sdk.CompactionSummaryMessageComponent({tokensBefore:12000,summary:'summary 中文\n'+('long text '.repeat(90))});
@@ -210,6 +302,30 @@ try {
     s.handleMouseEvent({button:0,x:13,y:body,release:true});
     assert.equal(calls(),1);assert.ok(s.getActiveSelectionText());
     s.stopSelectionAutoScroll();
+  });
+  await test('REAL fullscreen combined clean-copy and frame-click drag selects content without folding',async(t)=>{
+    let s;
+    t.after(()=>s?.stopSelectionAutoScroll());
+    const cleanCopy=await jiti.import(join(root,'clean-frame-copy/index.ts'));
+    const handlers=new Map();
+    cleanCopy.default({on:(name,handler)=>handlers.set(name,handler),registerCommand(){}});
+    handlers.get('session_start')({},live.ctx);
+    try {
+      const item=tool();item.setExpanded(true);
+      const calls=countToggles(item);s=screen(item);
+      const row=s.previousScreen.findIndex(line=>plain(line).includes('第'));
+      assert.ok(row>=0);
+      s.handleMouseEvent({button:0,x:0,y:row,release:false});
+      s.handleMouseEvent({button:32,x:width-1,y:row+1,release:false});
+      s.handleMouseEvent({button:0,x:width-1,y:row+1,release:true});
+      assert.equal(calls(),0,'a selection drag must never toggle');
+      const copied=s.getActiveSelectionText();
+      assert.match(copied,/第/);
+      assert.doesNotMatch(copied,/[│╭╰╮╯]/,'copy and displayed selection must exclude chrome');
+      s.doRender();
+      assert.equal(s.getActiveSelectionText(),copied,'selection repaint must not change copied text');
+      assert.equal(calls(),0);
+    } finally { handlers.get('session_shutdown')(); }
   });
   await test('REAL fullscreen bash/codemode frames expand from header and collapse from scrolled body',async()=>{
     const {createShellRenderers}=await jiti.import(join(modules,'@earendil-works/pi-coding-agent/dist/core/tools/renderers/bash.js'));
