@@ -28,7 +28,7 @@ Original terminal capture published with the author's permission. Other previews
 | | **Linux profile** | **Original package / Windows profile** |
 |---|---|---|
 | Entry | [`linux/`](linux/README.en.md) | Root `extensions/` and `patches/` |
-| Verified environment | CachyOS + Kitty, Pi **1.3.0** | Pi **1.2.0**; some adapters also support older versions |
+| Verified environment | CachyOS + Kitty, Pi **1.3.0** | Pi **1.2.0** full-suite baseline; selection / click adapters also verified on **1.5.0** |
 | Install | Clone, then `pi install ./linux` | npm or Git—choose one |
 | Highlights | 7 components, colored weather icons, green/red tool frames, PipeWire audio | 8 components, Fast toggle, `no-tool-bg` theme, Windows audio |
 | Reference | [English](linux/README.en.md) / [中文](linux/README.md) | [Features below](#features-and-commands) |
@@ -53,7 +53,7 @@ Merge the [Linux settings](linux/README.en.md#configuration); explicitly apply t
 
 ### Original package / Windows
 
-Node **22.19.0+**; Pi **1.2.0** recommended. Mouse enhancements require fullscreen and SGR mouse support.
+Node **22.19.0+**; Pi **1.2.0** full-suite baseline, with selection / click adapters verified on Pi **1.5.0**. Mouse enhancements require fullscreen and SGR mouse support.
 
 ```sh
 # New npm package (available after its first publication)
@@ -138,7 +138,7 @@ Both tools accept `--agent-dir <dir>` and `--modules <dir>`. The default agent i
 | Scope | Support boundary |
 |---|---|
 | Linux | Verified on Pi 1.3.0 + Kitty; retest other versions / terminals |
-| Original package | Frame adapters: Pi 1.0.4 / 1.1.0 / 1.2.0; clean selection additionally supports 1.3.0, not all components |
+| Original package | Frame adapters: Pi 1.0.4 / 1.1.0 / 1.2.0 / 1.5.0; clean selection additionally supports 1.3.0. All 56 real selection / click cases pass on Pi 1.5.0. Unknown patch / prerelease versions still fall back; this does not certify every component or terminal |
 | Audio | Linux profile: PipeWire + your own file; original package: Windows MCI, silent fallback on macOS/Linux |
 | Privacy | No bundled authentication, sessions or real quota; weather and optional plugins use their configured network services |
 

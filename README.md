@@ -28,7 +28,7 @@
 | | **Linux 配置** | **原基础包 / Windows 配置** |
 |---|---|---|
 | 入口 | [`linux/`](linux/README.md) | 根目录 `extensions/`、`patches/` |
-| 验证环境 | CachyOS + Kitty，Pi **1.3.0** | Pi **1.2.0**；部分适配另支持旧版本 |
+| 验证环境 | CachyOS + Kitty，Pi **1.3.0** | Pi **1.2.0** 全套基线；框选 / 点击另验证 **1.5.0** |
 | 安装 | 克隆仓库，`pi install ./linux` | npm 或 Git，二选一 |
 | 特点 | 7 个组件、彩色天气图标、绿/红工具框、PipeWire 提示音 | 8 个组件、Fast 开关、`no-tool-bg` 主题、Windows 提示音 |
 | 详细参数 | [中文](linux/README.md) / [English](linux/README.en.md) | [下方功能与配置](#功能与命令) |
@@ -55,7 +55,7 @@ pi install ./linux
 
 ### 原基础包 / Windows
 
-Node **22.19.0+**；推荐 Pi **1.2.0**。鼠标增强需要 fullscreen 和 SGR mouse 支持。
+Node **22.19.0+**；全套基线 Pi **1.2.0**，框选 / 点击适配已验证 Pi **1.5.0**。鼠标增强需要 fullscreen 和 SGR mouse 支持。
 
 ```sh
 # npm 新包（首次发布后可用）
@@ -140,7 +140,7 @@ cd pi-skin
 | 范围 | 支持边界 |
 |---|---|
 | Linux | 仅验证 Pi 1.3.0 + Kitty；其他版本 / 终端需重新测试 |
-| 原基础包 | 框适配：Pi 1.0.4 / 1.1.0 / 1.2.0；去框选区另支持 1.3.0，不代表所有组件支持 1.3.0 |
+| 原基础包 | 框适配：Pi 1.0.4 / 1.1.0 / 1.2.0 / 1.5.0；去框选区另支持 1.3.0。Pi 1.5.0 真实选区 / 点击回归 56 项通过；未知补丁版与预发布版仍回退，不代表全套组件或终端均已验证 |
 | 音频 | Linux 包：PipeWire + 自备文件；原基础包：Windows MCI，macOS/Linux 静默降级 |
 | 隐私 | 不附带认证、会话或真实额度；天气及可选插件按各自配置联网 |
 

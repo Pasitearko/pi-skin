@@ -10,10 +10,11 @@ const alias = Object.fromEntries(['pi-coding-agent','pi-tui','pi-ai','pi-agent-c
   ['@earendil-works','@mariozechner'].map(scope => [`${scope}/${name}`,join(modules,'@earendil-works',name,'dist/index.js')])));
 const jiti = createJiti(import.meta.url, { alias, fsCache: false });
 const root = join(dirname(dirname(fileURLToPath(import.meta.url))), "extensions");
+const alpsRoot = resolve(process.env.PI_TEST_ALPS || join(root,'../node_modules/alps-pi'));
 const sdk = await jiti.import(alias['@earendil-works/pi-coding-agent']);
 sdk.initTheme('dark');
 const tui = await jiti.import(alias['@earendil-works/pi-tui']);
-const alps = await jiti.import(join(root,'../node_modules/alps-pi/src/features/chrome-frame/patch.ts'));
+const alps = await jiti.import(join(alpsRoot,'src/features/chrome-frame/patch.ts'));
 const extension = await jiti.import(join(root,'frame-click-toggle/index.ts'));
 const width = 68;
 const ui = { requestRender() {} };
